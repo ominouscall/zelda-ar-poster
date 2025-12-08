@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Zelda AR Poster</title>
+
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+    <!-- MindAR -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
+
+    <style>
+        body, html {
+            margin: 0; padding: 0;
+            overflow: hidden;
+            background: black;
+        }
+
+        #startButton {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Botão exigido pelo mobile para liberar áudio -->
+<div id="startButton">TOQUE PARA INICIAR</div>
+
+<a-scene
+    mindar-image="imageTargetSrc: target.mind"
+    color-space="sRGB"
+    renderer="colorManagement: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    embedded>
+
+    <a-assets>
+        <video id="zeldaVideo" src="video.mp4" loop="true" playsinline webkit-playsinline></video>
+        <audio id="zeldaMusic" src="music.mp3" loop="true"></audio>
+    </a-assets>
+
+    <!-- Objeto AR que aparece sobre o poster detectado -->
+    <a-image
+        id="videoPlane"
+        mindar-image-target="targetIndex: 0"
+        width="1"
+        height="1"
+        position="0 0 0">
+
+        <a-video
+          src="#zeldaVideo"
+          width="1"
+          height="1">
+        </a-video>
+
+    </a-image>
+
+</a-scene>
+
+<script>
+    const startButton = document.getElementById("startButton");
+    const video = document.getElementById("zeldaVideo");
+    const music = document.getElementById("zeldaMusic");
+
+    startButton.addEventListener("click", () => {
+        startButton.style.display = "none";
+
+        // Libera vídeo e áudio após interação humana
+        video.play();
+        music.play();
+    });
+
+    // Quando o pôster é detectado
+    document.querySelector("a-scene").addEventListener("targetFound", () => {
+        video.play();
+        music.play();
+    });
+
+    // Quando o pôster é perdido
+    document.querySelector("a-scene").addEventListener("targetLost", () => {
+        video.pause();
+        music.pause();
+    });
+</script>
+
+</body>
+</html>
