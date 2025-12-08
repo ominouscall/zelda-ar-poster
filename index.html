@@ -4,11 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
   <title>Zelda AR Poster - Corrigido</title>
-
   <!-- A-Frame + MindAR -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
-
   <style>
     html,body { height:100%; margin:0; background:#000; font-family:Inter,Arial,Helvetica,sans-serif; }
     a-scene{ width:100%; height:100vh; display:block; }
@@ -24,26 +22,21 @@
   </style>
 </head>
 <body>
-
-<div id="startButton">TOQUE PARA INICIAR (permita a câmera)</div>
+<div id="startButton">TOQUE PARA INICIAR E PERMITIR CÂMERA</div>
 <div id="msg">Aponte a câmera para o pôster</div>
-
 <a-scene
   mindar-image="imageTargetSrc: target.mind; autoStart: false;"
   embedded
   vr-mode-ui="enabled: false"
   color-space="sRGB">
-
   <a-assets>
     <!-- video e audio (nomes fáceis para substituir) -->
     <video id="videoAsset" src="video.mp4" playsinline webkit-playsinline loop crossorigin="anonymous"></video>
     <audio id="audioAsset" src="music.mp3" preload="auto" loop></audio>
   </a-assets>
-
   <!-- Entidade que será usada pela câmera AR -->
   <!-- O motor do MindAR irá arrancar a câmera quando chamarmos start() -->
   <a-entity camera></a-entity>
-
   <!-- Container do target (vídeo sobreposto ao targetIndex 0) -->
   <a-entity id="targetEntity" mindar-image-target="targetIndex: 0" visible="false">
     <!-- aqui usamos a-video como filho do entity -->
@@ -56,9 +49,7 @@
              material="shader: flat; opacity: 1;">
     </a-video>
   </a-entity>
-
 </a-scene>
-
 <script>
 (async () => {
   const startButton = document.getElementById('startButton');
@@ -67,12 +58,10 @@
   const videoEl = document.getElementById('videoAsset');
   const audioEl = document.getElementById('audioAsset');
   const targetEntity = document.getElementById('targetEntity');
-
   // pega o sistema MindAR (A-Frame)
   function getMindarSystem() {
     return scene && scene.systems && scene.systems["mindar-image-system"];
   }
-
   // Função para iniciar MindAR (camera + tracking)
   async function startMindAR() {
     const mindar = getMindarSystem();
@@ -87,22 +76,18 @@
       throw err;
     }
   }
-
   // Eventos do sistema: targetFound / targetLost são emitidos no document a-scene
   scene.addEventListener("targetFound", (e) => {
     console.log("targetFound", e);
     // torna visível a entidade (caso esteja invisível)
     targetEntity.setAttribute('visible', 'true');
-
     // tenta tocar mídias (já houve gesture pelo botão)
     const p1 = videoEl.play().catch(err => { console.warn("video.play erro:", err); });
     const p2 = audioEl.play().catch(err => { console.warn("audio.play erro:", err); });
-
     Promise.all([p1, p2]).then(() => {
       console.log("Mídias tocando.");
     });
   });
-
   scene.addEventListener("targetLost", (e) => {
     console.log("targetLost", e);
     targetEntity.setAttribute('visible', 'false');
@@ -110,17 +95,34 @@
     try { videoEl.pause(); } catch(e) {}
     try { audioEl.pause(); } catch(e) {}
   });
-
   // Quando o usuário clica 'TOQUE PARA INICIAR'
   startButton.addEventListener('click', async () => {
     startButton.style.display = 'none';
     msg.innerText = "Solicitando permissão para câmera...";
 
+    // Solicita permissão explicitamente para a câmera
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log("Permissão para câmera concedida.");
+      msg.innerText = "Permissão concedida — iniciando AR...";
+    } catch (err) {
+      console.error("Erro ao solicitar permissão para câmera:", err);
+      if (err.name === 'NotAllowedError') {
+        alert("Permissão para câmera negada. Verifique as configurações do navegador e tente novamente.");
+      } else if (err.name === 'NotFoundError') {
+        alert("Nenhuma câmera encontrada no dispositivo.");
+      } else {
+        alert("Erro ao acessar a câmera: " + err.message);
+      }
+      startButton.style.display = 'flex';
+      return;
+    }
+
     // tentativa de tocar áudio/vídeo imediatamente (garante permissões de autoplay após gesture)
     try {
-      await audioEl.play().catch(()=>{}); // pode falhar, mas pedimos a permissão
+      await audioEl.play().catch(()=>{});
       await videoEl.play().catch(()=>{});
-      // pausamos de imediato — quando target for encontrado vamos tocar de novo
       videoEl.pause();
       audioEl.pause();
     } catch(e) {
@@ -133,13 +135,17 @@
     } catch(err) {
       alert("Não foi possível ativar a câmera. Verifique permissões e tente novamente.");
       startButton.style.display = 'flex';
+      // Libera o stream da câmera se falhar
+      if (stream) stream.getTracks().forEach(track => track.stop());
       return;
     }
+
+    // Libera o stream manual após sucesso (MindAR gerencia sua própria stream)
+    if (stream) stream.getTracks().forEach(track => track.stop());
 
     // opcional: mostrar instrução curta
     msg.innerText = "Aponte a câmera para o pôster. Toque no pôster (se necessário).";
   });
-
   // limpar quando a página for descartada
   window.addEventListener('pagehide', async () => {
     const mindar = getMindarSystem();
@@ -147,7 +153,6 @@
       try { await mindar.stop(); } catch(e){/*ignore*/ }
     }
   });
-
 })();
 </script>
 </body>
