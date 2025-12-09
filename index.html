@@ -1,80 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Twilight Princess Tribute</title>
 
-<!-- Google Fonts (Zelda vibes) -->
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Spectral:wght@300;400;600&display=swap" rel="stylesheet">
-
 <style>
-    body {
-        margin: 0;
-        padding: 0;
-        background: black;
-        color: #fff;
-        font-family: 'Cinzel', serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        overflow: hidden;
-        text-align: center;
-    }
+/* -------------------------------- */
+/*   CUSTOM ZELDA TWILIGHT FONTS    */
+/* -------------------------------- */
+@font-face {
+    font-family: 'HylianWiiRegular';
+    src: url('fonts/HylianWiiRegular.woff2') format('woff2'),
+         url('fonts/HylianWiiRegular.woff') format('woff');
+    font-weight: normal;
+}
 
-    #container {
-        opacity: 1;
-        transition: opacity 1.2s ease-in-out;
-    }
+@font-face {
+    font-family: 'HylianGCNBold';
+    src: url('fonts/HylianGCNBold.woff2') format('woff2'),
+         url('fonts/HylianGCNBold.woff') format('woff');
+    font-weight: bold;
+}
 
-    #quote {
-        font-size: 1.4rem;
-        max-width: 90%;
-        margin-bottom: 30px;
-        text-shadow: 0 0 8px rgba(255,255,255,0.4);
-        animation: fadeIn 2.2s ease forwards;
-    }
+/* -------------------------------- */
+/*           PAGE STYLING          */
+/* -------------------------------- */
+body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: #fff;
+    overflow: hidden;
+    font-family: 'HylianWiiRegular', serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
 
-    #startButton {
-        padding: 12px 22px;
-        font-size: 1.2rem;
-        border: 2px solid #cbb27a;
-        background: transparent;
-        color: #cbb27a;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-family: 'Cinzel', serif;
-    }
+/* Twilight glow aesthetic */
+#container {
+    text-align: center;
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+}
 
-    #startButton:hover {
-        background: #cbb27a;
-        color: black;
-        transform: scale(1.05);
-        box-shadow: 0 0 12px #cbb27a;
-    }
+#quote {
+    font-family: 'HylianWiiRegular', serif;
+    font-size: 1.4rem;
+    max-width: 90%;
+    margin: 0 auto 30px auto;
+    line-height: 1.5rem;
+    text-shadow: 0 0 8px rgba(255,255,255,0.35);
+    animation: fadeIn 2.2s ease forwards;
+}
 
-    #videoContainer {
-        display: none;
-        width: 100%;
-        height: 100vh;
-        background: black;
-        position: fixed;
-        top: 0;
-        left: 0;
-    }
+/* Button styled like Twilight Princess “PRESS START” */
+#startButton {
+    font-family: 'HylianGCNBold', serif;
+    font-size: 1.5rem;
+    padding: 12px 26px;
+    color: #e3d3a1;
+    background: transparent;
+    border: 3px solid #e3d3a1;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all .25s ease;
+}
 
-    #videoContainer video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+#startButton:hover {
+    background: #e3d3a1;
+    color: #000;
+    transform: scale(1.06);
+    box-shadow: 0 0 15px #e3d3a1;
+}
 
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
+/* Fullscreen video container */
+#videoContainer {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: black;
+}
+
+#videoContainer video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
 </style>
 </head>
 
@@ -82,31 +105,31 @@
 
 <div id="container">
     <div id="quote"></div>
-    <button id="startButton">Enter the Twilight</button>
+    <button id="startButton">PRESS START</button>
 </div>
 
 <div id="videoContainer">
-    <!-- LOOP ATIVADO -->
     <video id="mainVideo" src="video.mp4" loop></video>
 </div>
 
-<!-- ÁUDIO COM LOOP -->
 <audio id="bgm" src="music.mp3" loop></audio>
+<audio id="confirmSound" src="sounds/TP_Cursor_OK.wav"></audio>
 
 <script>
-// Zelda Twilight Princess quotes — as requested, all from the actual game.
+// Famous Twilight Princess quotes (from the actual game)
 const quotes = [
-    "A sword wields no strength unless the hand that holds it has courage.",
-    "Shadow and light are two sides of the same coin.",
-    "In our world, we must always coexist with the light.",
-    "Courage is the key that will open the path before you.",
-    "A hero chosen by the gods... destined to bring balance.",
-    "The twilight holds secrets only the brave can face.",
-    "Darkness may rise, but light will always return.",
-    "This power is granted only to those with a true heart."
+    "“Shadow and light are two sides of the same coin… one cannot exist without the other.” – Princess Zelda",
+    "“A sword wields no strength unless the hand that holds it has courage.” – The Hero's Shade",
+    "“In the darkness, we can still find light to guide us.” – Princess Zelda",
+    "“No matter how dark the night, morning always comes.” – Telma",
+    "“Courage need not be remembered, for it is never forgotten.” – Hero's Shade",
+    "“Your path has been chosen. You must go.” – Midna",
+    "“I... I believe in you.” – Midna",
+    "“Link… I wanted to leave you with one more memory.” – Midna",
+    "“Thank you… for everything.” – Midna"
 ];
 
-// pick quote
+// Put random quote on screen
 document.getElementById("quote").innerText =
     quotes[Math.floor(Math.random() * quotes.length)];
 
@@ -114,28 +137,33 @@ const startButton = document.getElementById("startButton");
 const videoContainer = document.getElementById("videoContainer");
 const mainVideo = document.getElementById("mainVideo");
 const bgm = document.getElementById("bgm");
+const confirmSound = document.getElementById("confirmSound");
 
 startButton.addEventListener("click", async () => {
 
-    // Show video container
+    // Play Zelda "confirm" sound
+    confirmSound.currentTime = 0;
+    confirmSound.play();
+
+    // Show video
     videoContainer.style.display = "block";
 
-    // Fade out the menu
+    // Fade out intro container
     document.getElementById("container").style.opacity = 0;
 
-    // Play video (already looping)
+    // Play looping video
     mainVideo.play().catch(err => console.log("Video failed:", err));
 
-    // AUDIO FADE IN — 3 seconds
+    // MUSIC FADE-IN (3 seconds)
     bgm.volume = 0;
     bgm.play().then(() => {
         let vol = 0;
-        const fade = setInterval(() => {
+        const interval = setInterval(() => {
             vol += 0.02;
             bgm.volume = vol;
-            if (vol >= 1) clearInterval(fade);
-        }, 60); // ~3s fade-in
-    }).catch(err => console.log("BGM failed:", err));
+            if (vol >= 1) clearInterval(interval);
+        }, 60);
+    }).catch(err => console.log("Audio failed:", err));
 });
 </script>
 
