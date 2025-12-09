@@ -1,170 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Twilight Princess Tribute</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Twilight Memory</title>
 
 <style>
-/* -------------------------------- */
-/*   CUSTOM ZELDA TWILIGHT FONTS    */
-/* -------------------------------- */
-@font-face {
-    font-family: 'HylianWiiRegular';
-    src: url('fonts/HylianWiiRegular.woff2') format('woff2'),
-         url('fonts/HylianWiiRegular.woff') format('woff');
-    font-weight: normal;
-}
+    @font-face {
+        font-family: "WiiRegular";
+        src: url("TPHylian-WiiRegular.otf");
+    }
+    @font-face {
+        font-family: "GCNBold";
+        src: url("TPHylian-GCNBold.otf");
+    }
 
-@font-face {
-    font-family: 'HylianGCNBold';
-    src: url('fonts/HylianGCNBold.woff2') format('woff2'),
-         url('fonts/HylianGCNBold.woff') format('woff');
-    font-weight: bold;
-}
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: black;
+        font-family: "WiiRegular", serif;
+    }
 
-/* -------------------------------- */
-/*           PAGE STYLING          */
-/* -------------------------------- */
-body {
-    margin: 0;
-    padding: 0;
-    background: black;
-    color: #fff;
-    overflow: hidden;
-    font-family: 'HylianWiiRegular', serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
+    #bgVideo, #secretVideo {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        z-index: 1;
+    }
 
-/* Twilight glow aesthetic */
-#container {
-    text-align: center;
-    opacity: 1;
-    transition: opacity 1s ease-in-out;
-}
+    #secretVideo {
+        display: none;
+        z-index: 9;
+    }
 
-#quote {
-    font-family: 'HylianWiiRegular', serif;
-    font-size: 1.4rem;
-    max-width: 90%;
-    margin: 0 auto 30px auto;
-    line-height: 1.5rem;
-    text-shadow: 0 0 8px rgba(255,255,255,0.35);
-    animation: fadeIn 2.2s ease forwards;
-}
+    #overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        backdrop-filter: blur(2px);
+    }
 
-/* Button styled like Twilight Princess “PRESS START” */
-#startButton {
-    font-family: 'HylianGCNBold', serif;
-    font-size: 1.5rem;
-    padding: 12px 26px;
-    color: #e3d3a1;
-    background: transparent;
-    border: 3px solid #e3d3a1;
-    border-radius: 4px;
-    cursor: pointer;
-    letter-spacing: 2px;
-    transition: all .25s ease;
-}
+    #quote {
+        font-family: "WiiRegular";
+        color: #e8d8a8;
+        font-size: 1.3rem;
+        max-width: 90vw;
+        text-align: center;
+        margin-bottom: 40px;
+        text-shadow: 2px 2px 4px black;
+    }
 
-#startButton:hover {
-    background: #e3d3a1;
-    color: #000;
-    transform: scale(1.06);
-    box-shadow: 0 0 15px #e3d3a1;
-}
+    #startButton {
+        font-family: "GCNBold";
+        font-size: 2rem;
+        color: #e8d8a8;
+        border: 2px solid #e8d8a8;
+        padding: 12px 28px;
+        border-radius: 4px;
+        cursor: pointer;
+        background: rgba(0,0,0,0.6);
+        text-shadow: 2px 2px 4px black;
+        transition: 0.25s;
+    }
 
-/* Fullscreen video container */
-#videoContainer {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    background: black;
-}
+    #startButton:hover {
+        background: rgba(255,255,255,0.1);
+        transform: scale(1.05);
+    }
 
-#videoContainer video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+    /* Fade overlay */
+    #fadeLayer {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        z-index: 8;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 1s ease;
+    }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
+    /* INVISIBLE CLICK AREA ABOVE LINK'S HEAD */
+    #linkHitbox {
+        position: fixed;
+        width: 18vw;   /* responsive size */
+        height: 18vw;
+        max-width: 150px;
+        max-height: 150px;
+        left: 38vw;   /* from your marked screenshot */
+        top: 43vh;
+        z-index: 5;
+        background: rgba(255,0,0,0); /* fully transparent */
+    }
 </style>
 </head>
 
 <body>
 
-<div id="container">
+<!-- Background looping video -->
+<video id="bgVideo" src="video.mp4" autoplay loop muted playsinline></video>
+
+<!-- Secret cutscene -->
+<video id="secretVideo" src="easter-eggs/creepy-link-scene.mp4" playsinline></video>
+
+<!-- Music -->
+<audio id="bgMusic" src="music.mp3" loop></audio>
+<audio id="pressSound" src="press-start.mp3"></audio>
+
+<div id="overlay">
     <div id="quote"></div>
-    <button id="startButton">PRESS START</button>
+    <div id="startButton">PRESS START</div>
 </div>
 
-<div id="videoContainer">
-    <video id="mainVideo" src="video.mp4" loop></video>
-</div>
+<div id="fadeLayer"></div>
 
-<audio id="bgm" src="music.mp3" loop></audio>
-<audio id="confirmSound" src="sounds/TP_Cursor_OK.wav"></audio>
+<!-- Invisible hitbox used for the 10-click easter egg -->
+<div id="linkHitbox"></div>
 
 <script>
-// Famous Twilight Princess quotes (from the actual game)
+/* Famous Twilight Princess quotes */
 const quotes = [
-    "“Shadow and light are two sides of the same coin… one cannot exist without the other.”",
     "“A sword wields no strength unless the hand that holds it has courage.”",
-    "“In the darkness, we can still find light to guide us.”",
-    "“No matter how dark the night, morning always comes.”",
+    "“Shadow and light are two sides of the same coin.”",
+    "“Hero of Twilight, lend your power to this sacred blade.”",
+    "“The twilight there holds a serene beauty… you have seen it for yourself.”",
+    "“I... I wanted to see you again, Link.”",
     "“Courage need not be remembered, for it is never forgotten.”",
-    "“Your path has been chosen. You must go.”",
-    "“I... I believe in you.” – Midna",
-    "“Link… I wanted to leave you with one more memory.”",
-    "“Thank you… for everything.”"
+    "“Light and shadow can't mix as one, but they can coexist.”"
 ];
 
-// Put random quote on screen
 document.getElementById("quote").innerText =
     quotes[Math.floor(Math.random() * quotes.length)];
 
-const startButton = document.getElementById("startButton");
-const videoContainer = document.getElementById("videoContainer");
-const mainVideo = document.getElementById("mainVideo");
-const bgm = document.getElementById("bgm");
-const confirmSound = document.getElementById("confirmSound");
+const bgMusic = document.getElementById("bgMusic");
+const pressSound = document.getElementById("pressSound");
+const overlay = document.getElementById("overlay");
+const fadeLayer = document.getElementById("fadeLayer");
 
-startButton.addEventListener("click", async () => {
+const bgVideo = document.getElementById("bgVideo");
+const secretVideo = document.getElementById("secretVideo");
 
-    // Play Zelda "confirm" sound
-    confirmSound.currentTime = 0;
-    confirmSound.play();
+document.getElementById("startButton").onclick = () => {
+    pressSound.play();
 
-    // Show video
-    videoContainer.style.display = "block";
+    overlay.style.opacity = "0";
+    overlay.style.pointerEvents = "none";
+    overlay.style.transition = "opacity 1.5s ease";
 
-    // Fade out intro container
-    document.getElementById("container").style.opacity = 0;
-
-    // Play looping video
-    mainVideo.play().catch(err => console.log("Video failed:", err));
-
-    // MUSIC FADE-IN (3 seconds)
-    bgm.volume = 0;
-    bgm.play().then(() => {
-        let vol = 0;
-        const interval = setInterval(() => {
+    /* Fade-in for music */
+    bgMusic.volume = 0;
+    bgMusic.play();
+    let vol = 0;
+    const fadeInterval = setInterval(() => {
+        if (vol < 1) {
             vol += 0.02;
-            bgm.volume = vol;
-            if (vol >= 1) clearInterval(interval);
-        }, 60);
-    }).catch(err => console.log("Audio failed:", err));
+            bgMusic.volume = vol;
+        } else {
+            clearInterval(fadeInterval);
+        }
+    }, 80);
+};
+
+/* Easter Egg: 10 fast clicks on Link hitbox */
+let clickCount = 0;
+let lastClickTime = 0;
+
+document.getElementById("linkHitbox").addEventListener("click", () => {
+    const now = Date.now();
+
+    if (now - lastClickTime < 400) {
+        clickCount++;
+    } else {
+        clickCount = 1;
+    }
+
+    lastClickTime = now;
+
+    if (clickCount >= 10) {
+        triggerSecretCutscene();
+        clickCount = 0;
+    }
 });
+
+function triggerSecretCutscene() {
+    /* Fade to black */
+    fadeLayer.style.opacity = "1";
+
+    setTimeout(() => {
+        /* Pause music & main video */
+        bgMusic.pause();
+        bgVideo.pause();
+
+        /* Start secret video */
+        secretVideo.style.display = "block";
+        secretVideo.currentTime = 0;
+        secretVideo.play();
+
+        /* When secret video ends, fade out */
+        secretVideo.onended = () => {
+            fadeLayer.style.opacity = "1";
+
+            setTimeout(() => {
+                secretVideo.style.display = "none";
+                bgVideo.play();
+                bgMusic.play();
+                fadeLayer.style.opacity = "0";
+            }, 800);
+        };
+
+        fadeLayer.style.opacity = "0";
+    }, 800);
+}
 </script>
 
 </body>
