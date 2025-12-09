@@ -22,7 +22,7 @@
         font-family: "WiiRegular", serif;
     }
 
-    #bgVideo, #secretVideo {
+    #bgVideo {
         position: fixed;
         top: 0; left: 0;
         width: 100vw;
@@ -32,10 +32,17 @@
     }
 
     #secretVideo {
-        display: none;
-        z-index: 9;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;  /* largura exata da tela */
+    height: 100vh; /* altura exata da tela */
+    object-fit: fill; /* <-- ESTICA o vídeo pra caber */
+    z-index: 9999;
+    display: none;
+    background: black;
     }
-
+    
     #overlay {
         position: fixed;
         top: 0; left: 0;
