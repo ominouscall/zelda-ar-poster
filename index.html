@@ -120,7 +120,10 @@
         background: rgba(255, 0, 0, 0);
     }
 
-    /* NEW OCARINA BUTTONS */
+    /* ------------------------------ */
+    /* OCARINA UI */
+    /* ------------------------------ */
+
     .ocarina-container {
         position: fixed;
         right: 20px;
@@ -135,10 +138,18 @@
         height: 65px;
         cursor: pointer;
         transition: transform 0.15s ease;
+        -webkit-tap-highlight-color: transparent !important;
+        outline: none !important;
+        user-select: none;
     }
 
     .ocarina-btn:active {
         transform: scale(0.88);
+    }
+
+    /* Up key lifted slightly to form triangle */
+    #btnUp {
+        margin-bottom: 20px;
     }
 
 </style>
@@ -153,11 +164,11 @@
 <audio id="bgMusic"></audio>
 <audio id="pressSound" src="press-start.mp3"></audio>
 
-<!-- Ocarina buttons (start hidden) -->
+<!-- Ocarina buttons (start hidden, appear only after Press Start when eligible) -->
 <div id="ocarina" class="ocarina-container" style="display:none;">
-    <img id="btnLeft"  class="ocarina-btn" src="ocarina/left-ar-oc.png">
-    <img id="btnUp"    class="ocarina-btn" src="ocarina/up-ar-oc.png">
-    <img id="btnRight" class="ocarina-btn" src="ocarina/right-ar-oc.png">
+    <img id="btnLeft"  class="ocarina-btn" src="ocarina/left-ar-oc.png" alt="Left">
+    <img id="btnUp"    class="ocarina-btn" src="ocarina/up-ar-oc.png" alt="Up">
+    <img id="btnRight" class="ocarina-btn" src="ocarina/right-ar-oc.png" alt="Right">
 </div>
 
 <div id="overlay">
@@ -166,7 +177,6 @@
 </div>
 
 <div id="fadeLayer"></div>
-
 <div id="linkHitbox"></div>
 
 <script>
@@ -192,7 +202,7 @@ const bgVideo = document.getElementById("bgVideo");
 const secretVideo = document.getElementById("secretVideo");
 
 /* =====================================================
-   ORIENTATION VIDEO SWITCH (existing system)
+   ORIENTATION VIDEO SWITCH (unchanged behavior)
 ===================================================== */
 function updateVideoByOrientation() {
     const isLandscape = window.matchMedia("(orientation: landscape)").matches;
@@ -209,7 +219,8 @@ function updateVideoByOrientation() {
     bgVideo.src = newSrc;
 
     bgVideo.onloadedmetadata = () => {
-        bgVideo.currentTime = currentTime;
+        // try to keep current time where possible
+        try { bgVideo.currentTime = Math.min(currentTime, bgVideo.duration || 0); } catch(e) {}
         if (!wasPaused) bgVideo.play();
     };
 }
@@ -220,7 +231,7 @@ window.addEventListener("orientationchange", updateVideoByOrientation);
 window.addEventListener("resize", updateVideoByOrientation);
 
 /* =====================================================
-       RANDOM MUSIC SYSTEM (your existing system)
+       RANDOM MUSIC SYSTEM (unchanged)
 ===================================================== */
 const musicList = [];
 for (let i = 1; i <= 10; i++) {
@@ -244,7 +255,7 @@ function playRandomMusic() {
 bgMusic.onended = playRandomMusic;
 
 /* =====================================================
-                   TIME FILTER
+                     TIME FILTER
 ===================================================== */
 function applyTimeFilter() {
     const hour = new Date().getHours();
@@ -257,8 +268,10 @@ function applyTimeFilter() {
 applyTimeFilter();
 
 /* =====================================================
-                     START BUTTON
+                  START BUTTON
 ===================================================== */
+let ocarinaShouldAppear = false;
+
 document.getElementById("startButton").onclick = () => {
     pressSound.play();
     overlay.style.opacity = "0";
@@ -275,6 +288,10 @@ document.getElementById("startButton").onclick = () => {
             bgMusic.volume = vol;
         } else clearInterval(fadeInterval);
     }, 80);
+
+    if (ocarinaShouldAppear) {
+        document.getElementById("ocarina").style.display = "flex";
+    }
 };
 
 /* =====================================================
@@ -324,22 +341,18 @@ function triggerSecretCutscene() {
 }
 
 /* =====================================================
-                     NEW OCARINA EASTER EGG
+                     OCARINA EASTER EGG
 ===================================================== */
 
 /* VISITS LOGIC */
 let visits = Number(localStorage.getItem("visits") || 0) + 1;
 localStorage.setItem("visits", visits);
 
-let showOcarina = false;
-if (visits === 4) showOcarina = true;
-else if (visits > 4 && Math.random() < 0.30) showOcarina = true;
+/* The ocarina no longer shows before Start; only mark if should appear */
+if (visits === 4) ocarinaShouldAppear = true;
+else if (visits > 4 && Math.random() < 0.30) ocarinaShouldAppear = true;
 
-const ocarinaDiv = document.getElementById("ocarina");
-
-if (showOcarina) ocarinaDiv.style.display = "flex";
-
-/* BUTTONS + SOUNDS */
+/* BUTTON SEQUENCE */
 const seq = [];
 const correctSeq = ["L","U","R","L","U","R"];
 
@@ -356,7 +369,11 @@ function playNote(note) {
 
     if (seq.length > correctSeq.length) seq.shift();
 
-    if (seq.join("") === correctSeq.join("")) triggerLullaby();
+    if (seq.join("") === correctSeq.join("")) {
+        // clear sequence to avoid double-trigger
+        seq.length = 0;
+        triggerLullabySequence();
+    }
 }
 
 document.getElementById("btnLeft").onclick  = () => playNote("L");
@@ -364,20 +381,65 @@ document.getElementById("btnUp").onclick    = () => playNote("U");
 document.getElementById("btnRight").onclick = () => playNote("R");
 
 /* =====================================================
-             TRIGGER LULLABY EASTER EGG
+            TRIGGER LULLABY EASTER EGG (NEW FLOW)
 ===================================================== */
-function triggerLullaby() {
 
-    ocarinaDiv.style.transition = "opacity 0.9s ease";
+function triggerLullabySequence() {
+    // play immediate "correct" sound
+    const correctSound = new Audio("ocarina/song-correct.mp3");
+    correctSound.currentTime = 0;
+    correctSound.play();
+
+    // visual: fade out ocarina UI
+    const ocarinaDiv = document.getElementById("ocarina");
+    ocarinaDiv.style.transition = "opacity 0.6s ease";
     ocarinaDiv.style.opacity = "0";
 
+    // after UI fade, darken screen and play short lullaby (oot-lullaby.mp3)
     setTimeout(() => {
-        ocarinaDiv.style.display = "none";
+        // darken screen
+        fadeLayer.style.transition = "opacity 0.6s ease";
+        fadeLayer.style.opacity = "1";
 
-        window.lullabyMode = true;
-        updateVideoByOrientation();
+        // pause current background music and video
+        try { bgMusic.pause(); } catch(e) {}
+        try { bgVideo.pause(); } catch(e) {}
 
-    }, 900);
+        // play oot-lullaby (small music before switching video)
+        const oot = new Audio("ocarina/oot-lullaby.mp3");
+        oot.currentTime = 0;
+        oot.play();
+
+        oot.onended = () => {
+            // hide ocarina permanently (after sequence)
+            ocarinaDiv.style.display = "none";
+
+            // switch to lullaby video mode
+            window.lullabyMode = true;
+            updateVideoByOrientation();
+
+            // ensure bgVideo starts from beginning and loops as before
+            try { bgVideo.currentTime = 0; } catch(e) {}
+            try { bgVideo.play(); } catch(e) {}
+
+            // start background music exactly with music3.mp3
+            bgMusic.src = "music/music3.mp3";
+            bgMusic.currentTime = 0;
+            bgMusic.play();
+
+            // when music3 ends, resume random playback as before
+            bgMusic.onended = () => {
+                // restore onended handler to default random behavior
+                bgMusic.onended = playRandomMusic;
+                playRandomMusic();
+            };
+
+            // fade back to normal after short delay so video is visible
+            setTimeout(() => {
+                fadeLayer.style.opacity = "0";
+            }, 350);
+        };
+    }, 650);
 }
 
 </script>
