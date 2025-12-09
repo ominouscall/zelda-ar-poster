@@ -3,137 +3,99 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
-  <title>Zelda AR Poster - Corrigido</title>
+  <title>Zelda AR Poster</title>
 
-  <!-- A-Frame + MindAR -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
 
   <style>
-    html,body { height:100%; margin:0; background:#000; font-family:Inter,Arial,Helvetica,sans-serif; }
-    a-scene{ width:100%; height:100vh; display:block; }
-
+    html,body { height:100%; margin:0; background:#000; }
     #startButton{
       position:fixed; inset:0; z-index:9999;
       display:flex; align-items:center; justify-content:center;
-      background: rgba(0,0,0,0.85); color:#fff; font-size:20px;
-      -webkit-user-select:none; user-select:none; cursor:pointer;
+      background: rgba(0,0,0,0.85); color:#fff;
+      font-size:20px; cursor:pointer;
     }
-
-    #msg {
-      position: fixed; left: 12px; bottom: 12px;
-      color:#ddd; font-size:12px; z-index:10000;
+    #msg{
+      position:fixed; left:12px; bottom:12px; z-index:10000;
+      color:#ddd; font-size:12px;
     }
   </style>
 </head>
 
 <body>
 
-<div id="startButton">TOQUE PARA INICIAR E PERMITIR CÂMERA</div>
+<div id="startButton">TOQUE PARA INICIAR</div>
 <div id="msg">Aponte a câmera para o pôster</div>
 
 <a-scene
-  playsinline
-  mindar-image="imageTargetSrc: target.mind; autoStart: false;"
-  embedded
-  vr-mode-ui="enabled: false"
-  color-space="sRGB">
+    mindar-image="imageTargetSrc: target.mind; autoStart: false"
+    embedded
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
 
   <a-assets>
     <video id="videoAsset" src="video.mp4" playsinline webkit-playsinline loop crossorigin="anonymous"></video>
     <audio id="audioAsset" src="music.mp3" preload="auto" loop></audio>
   </a-assets>
 
-  <a-entity camera></a-entity>
+  <!-- ESTA é a câmera correta do MindAR -->
+  <a-entity mindar-image-camera></a-entity>
 
   <a-entity id="targetEntity" mindar-image-target="targetIndex: 0" visible="false">
     <a-video id="planeVideo"
              src="#videoAsset"
-             width="1.0"
+             width="1"
              height="0.56"
-             position="0 0 0"
-             rotation="0 0 0"
-             material="shader: flat; opacity: 1;">
+             position="0 0 0">
     </a-video>
   </a-entity>
+
 </a-scene>
 
 <script>
-(async () => {
-  const startButton = document.getElementById('startButton');
-  const msg = document.getElementById('msg');
-  const scene = document.querySelector('a-scene');
-  const videoEl = document.getElementById('videoAsset');
-  const audioEl = document.getElementById('audioAsset');
-  const targetEntity = document.getElementById('targetEntity');
+const startButton = document.getElementById("startButton");
+const msg = document.getElementById("msg");
+const scene = document.querySelector("a-scene");
+const videoEl = document.getElementById("videoAsset");
+const audioEl = document.getElementById("audioAsset");
+const targetEntity = document.getElementById("targetEntity");
 
-  function getMindarSystem() {
-    return scene?.systems?.["mindar-image-system"];
+function getMindarSystem(){
+  return scene.systems["mindar-image-system"];
+}
+
+scene.addEventListener("targetFound", () => {
+  targetEntity.setAttribute("visible", true);
+  videoEl.play().catch(()=>{});
+  audioEl.play().catch(()=>{});
+});
+
+scene.addEventListener("targetLost", () => {
+  targetEntity.setAttribute("visible", false);
+  videoEl.pause();
+  audioEl.pause();
+});
+
+startButton.addEventListener("click", async () => {
+  startButton.style.display = "none";
+  msg.innerText = "Ativando câmera...";
+
+  // Permite autoplay após gesto
+  try {
+    await videoEl.play(); videoEl.pause();
+    await audioEl.play(); audioEl.pause();
+  } catch(e){}
+
+  try {
+    await getMindarSystem().start();
+    msg.innerText = "Aponte a câmera para o pôster";
+  } catch(e){
+    console.error(e);
+    alert("Não foi possível ativar a câmera.");
+    startButton.style.display = "flex";
   }
-
-  async function startMindAR() {
-    const mindar = getMindarSystem();
-    if (!mindar) throw new Error("MindAR system não encontrado.");
-
-    try {
-      await mindar.start();
-      console.log("MindAR: câmera iniciada.");
-      msg.innerText = "Câmera ativada — aponte para o pôster";
-    } catch (err) {
-      console.error("Erro ao iniciar MindAR:", err);
-      throw err;
-    }
-  }
-
-  // Eventos do MindAR
-  scene.addEventListener("targetFound", () => {
-    targetEntity.setAttribute('visible', 'true');
-
-    videoEl.play().catch(()=>{});
-    audioEl.play().catch(()=>{});
-  });
-
-  scene.addEventListener("targetLost", () => {
-    targetEntity.setAttribute('visible', 'false');
-
-    videoEl.pause();
-    audioEl.pause();
-  });
-
-  // Iniciar AR ao tocar
-  startButton.addEventListener('click', async () => {
-    startButton.style.display = 'none';
-    msg.innerText = "Carregando...";
-
-    // liberar autoplay (importante para iOS/Android)
-    try {
-      await audioEl.play().catch(()=>{});
-      await videoEl.play().catch(()=>{});
-      audioEl.pause();
-      videoEl.pause();
-    } catch(e) {}
-
-    // iniciar MindAR (ele abre a câmera)
-    try {
-      await startMindAR();
-    } catch(err) {
-      alert("Não foi possível ativar a câmera. Verifique as permissões.");
-      startButton.style.display = 'flex';
-      return;
-    }
-
-    msg.innerText = "Aponte a câmera para o pôster.";
-  });
-
-  // Parar MindAR ao sair da página
-  window.addEventListener('pagehide', async () => {
-    const mindar = getMindarSystem();
-    if (mindar) {
-      try { await mindar.stop(); } catch(e){}
-    }
-  });
-
-})();
+});
 </script>
 
 </body>
