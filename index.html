@@ -1,314 +1,118 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Twilight Echoes — Zelda: Twilight Princess Tribute</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Twilight Tribute</title>
 
-  <!-- Google Fonts: Cinzel (épico) + Uncial Antiqua (fantasia) -->
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Uncial+Antiqua&display=swap" rel="stylesheet">
+<!-- Zelda-style font -->
+<link href="https://fonts.cdnfonts.com/css/zelda" rel="stylesheet">
 
-  <style>
-    :root{
-      --bg:#07060a;
-      --accent:#d6b66b;
-      --accent-2:#b08b3b;
-      --muted:#bdb8b0;
-      --glass: rgba(255,255,255,0.06);
-    }
-    html,body{height:100%;margin:0;font-family: 'Cinzel', serif;background:var(--bg);color:#fff;-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
-    /* full-bleed container */
-    .stage{
-      position:fixed; inset:0; overflow:hidden; display:flex; align-items:center; justify-content:center;
-      background:linear-gradient(180deg, rgba(7,6,10,1) 0%, rgba(12,10,14,1) 40%, rgba(0,0,0,1) 100%);
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Zelda', serif;
+        background: #000;
+        overflow: hidden;
+        color: #e2d7b7;
     }
 
-    /* cinematic video layer */
-    video#mainVideo{
-      position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; transform:scale(1.02);
-      filter: contrast(1.02) saturate(1.05) brightness(0.98);
-      background: black;
+    .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        width: 90%;
+        max-width: 900px;
+        opacity: 1;
+        transition: opacity 1s ease;
     }
 
-    /* subtle film grain & vignette */
-    .grain{
-      pointer-events:none;
-      position:fixed; inset:0; z-index:4; mix-blend-mode: overlay; opacity:0.32;
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><filter id="f"><feTurbulence baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23f)" /></svg>');
-      background-size: 200% 200%;
-      animation: grainMove 8s linear infinite;
-    }
-    @keyframes grainMove { from{transform:translate(0,0)} to{transform:translate(12px,8px)} }
-
-    .vignette{
-      pointer-events:none;
-      position:fixed; inset:0; z-index:3; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.6) 100%); mix-blend-mode:multiply;
+    h1 {
+        font-size: 2.2rem;
+        text-shadow: 0 0 15px #d6c299;
+        line-height: 1.4;
+        opacity: 0;
+        animation: fadeInText 2s forwards;
     }
 
-    /* thematic frame */
-    .frame {
-      position:relative; z-index:6; width:min(1000px,94vw); padding:28px; display:flex; flex-direction:column; gap:18px; align-items:center; justify-content:center;
-      box-sizing:border-box; pointer-events:auto;
-      backdrop-filter: blur(6px) saturate(1.1);
+    @keyframes fadeInText {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
-    .brand {
-      display:flex; align-items:center; gap:14px; transform:translateY(-8px);
-    }
-    .crest {
-      width:56px; height:56px; border-radius:50%; background: linear-gradient(180deg,var(--accent), var(--accent-2));
-      box-shadow: 0 6px 24px rgba(0,0,0,0.6), inset 0 -6px 16px rgba(0,0,0,0.18);
-      display:flex; align-items:center; justify-content:center; font-family:'Uncial Antiqua', serif; font-size:28px; color:#111; letter-spacing:1px;
-      border:3px solid rgba(255,255,255,0.06);
-    }
-    .title {
-      font-family:'Uncial Antiqua', serif; font-size:28px; color:var(--accent); text-shadow: 0 4px 18px rgba(0,0,0,0.6);
-      letter-spacing:2px;
+    #startBtn {
+        margin-top: 40px;
+        padding: 15px 35px;
+        border: 2px solid #c3a878;
+        background: rgba(0,0,0,0.5);
+        color: #e2d7b7;
+        font-size: 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s;
     }
 
-    /* quote card */
-    .quoteBox {
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius:12px; padding:18px 22px; max-width:820px; text-align:center; box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-      border: 1px solid rgba(255,255,255,0.04);
-    }
-    .quote {
-      font-size:20px; line-height:1.28; color:#fff; font-weight:400; font-style:italic; font-family: 'Cinzel', serif;
-    }
-    .quoteAuthor {
-      margin-top:12px; font-size:13px; color:var(--muted); letter-spacing:1px;
+    #startBtn:hover {
+        background: rgba(255,255,255,0.1);
+        transform: scale(1.05);
     }
 
-    /* CTA */
-    .controls {
-      display:flex; gap:14px; align-items:center; margin-top:6px;
-    }
-    .btn {
-      appearance:none; border:0; cursor:pointer; padding:12px 18px; border-radius:12px; font-weight:700; font-size:16px;
-      background: linear-gradient(180deg, rgba(214,182,107,0.98), rgba(176,139,59,0.98));
-      color:#0a0600; box-shadow: 0 10px 30px rgba(11,7,2,0.45);
-      transform:translateY(0); transition: transform .14s ease, box-shadow .14s ease;
-    }
-    .btn:active{ transform:translateY(1px); box-shadow: 0 6px 18px rgba(11,7,2,0.45); }
-    .ghost {
-      background: transparent; border:1px solid rgba(255,255,255,0.06); color:#ddd; font-weight:600;
+    video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
     }
 
-    /* small note */
-    .hint { margin-top:6px; font-size:12px; color:var(--muted); opacity:0.9; }
-
-    /* UI top-left: small emblem + open credits */
-    .topLeft { position:fixed; left:18px; top:18px; z-index:8; display:flex; gap:8px; align-items:center; }
-    .logoText { font-family:'Uncial Antiqua', serif; color:var(--accent); text-shadow: 0 3px 18px rgba(0,0,0,0.55); font-size:18px; }
-
-    /* media */
-    @media (max-width:720px){
-      .quote { font-size:18px; }
-      .crest { width:48px; height:48px; font-size:24px; }
-      .title { font-size:20px; }
-      .frame { padding:16px; gap:10px; }
+    audio {
+        display: none;
     }
-  </style>
+</style>
 </head>
 <body>
-  <div class="stage" id="stage">
-    <!-- VIDEO (hidden until started, but present for perf) -->
-    <video id="mainVideo" playsinline webkit-playsinline preload="auto" crossorigin="anonymous" src="video.mp4"></video>
 
-    <div class="vignette"></div>
-    <div class="grain" aria-hidden="true"></div>
+<video id="video" src="video.mp4"></video>
+<audio id="music" src="music.mp3"></audio>
 
-    <!-- light particle canvas -->
-    <canvas id="fx" style="position:fixed; inset:0; z-index:2; pointer-events:none;"></canvas>
+<div class="center" id="intro">
+    <h1 id="quote">Loading...</h1>
+    <button id="startBtn">Begin</button>
+</div>
 
-    <!-- top-left branding -->
-    <div class="topLeft" aria-hidden="true">
-      <div class="crest">TP</div>
-      <div class="logoText">Twilight Echoes</div>
-    </div>
+<script>
+const quotes = [
+    "A sword wields no strength unless the hand that holds it has courage.",
+    "Shadow and light are two sides of the same coin.",
+    "In our world, we must always coexist with the light.",
+    "Courage is the key that will open the path before you.",
+    "A hero chosen by the gods... destined to bring balance.",
+    "The twilight holds secrets only the brave can face.",
+    "Darkness may rise, but light will always return.",
+    "This power is granted only to those with a true heart."
+];
 
-    <!-- central frame -->
-    <div class="frame" role="region" aria-label="Experiência Zelda Twilight Princess" style="z-index:6;">
-      <div class="brand">
-        <div class="crest" aria-hidden="true">TP</div>
-        <div class="title">Twilight Echoes</div>
-      </div>
+document.getElementById("quote").textContent =
+    quotes[Math.floor(Math.random() * quotes.length)];
 
-      <div class="quoteBox" id="quoteBox" aria-live="polite">
-        <div class="quote" id="quoteText">Carregando...</div>
-        <div class="quoteAuthor" id="quoteAuthor">— Terra de Hyrule</div>
-      </div>
+document.getElementById("startBtn").addEventListener("click", () => {
+    const intro = document.getElementById("intro");
+    const video = document.getElementById("video");
+    const music = document.getElementById("music");
 
-      <div class="controls" id="controls">
-        <button class="btn" id="startBtn" aria-label="Iniciar a experiência">Iniciar</button>
-        <button class="btn ghost" id="toggleSub" aria-pressed="false">Descrição</button>
-        <button class="btn ghost" id="pauseBtn" style="display:none">Pausar</button>
-      </div>
-      <div class="hint" id="hint">Especial: Escaneie o QR para abrir direto no dispositivo.</div>
-    </div>
-  </div>
+    intro.style.opacity = "0";
+    setTimeout(() => intro.style.display = "none", 1000);
 
-  <!-- audio separate from video to ensure consistent playback control -->
-  <audio id="music" preload="auto" src="music.mp3" crossorigin="anonymous"></audio>
+    video.style.display = "block";
+    video.play();
+    music.play();
+});
+</script>
 
-  <script>
-    // --- 30 frases temáticas (em português). Geradas para capturar o tom de Twilight Princess.
-    const phrases = [
-      {t:"A escuridão sussurra, mas a coragem brilha mais forte.", a:"— Ecos do Crepúsculo"},
-      {t:"Quando o crepúsculo cai, heróis nascem do silêncio.", a:"— Lendas de Hyrule"},
-      {t:"Há um peso no mundo que só a coragem pode erguer.", a:"— Velho Conto"},
-      {t:"Luz e sombra dançam; escolha sua lâmina com cuidado.", a:"— Sussurro do Tempo"},
-      {t:"A memória de Hyrule habita aqueles que ousam lutar.", a:"— Vozes Antigas"},
-      {t:"Nas margens da noite, uma promessa encara o amanhã.", a:"— Carta do Destino"},
-      {t:"O destino não espera — caminha ao lado de quem decide.", a:"— Lâmina e Luz"},
-      {t:"O covil do crepúsculo não teme o dia, mas teme o coração.", a:"— Canção Sombria"},
-      {t:"Mesmo perdido, o herói encontra seu próprio caminho de volta.", a:"— Mapa das Estrelas"},
-      {t:"As sombras protegem segredos; cabe a você descobri-los.", a:"— Guardiã Ancestral"},
-      {t:"Quando o mundo se dobra, a coragem traça a reta.", a:"— O Grito do Herói"},
-      {t:"A saudade de Hyrule chama — responda com passos firmes.", a:"— Passos do Viajante"},
-      {t:"Silêncio é o primeiro aliado do corajoso.", a:"— Reflexo no Lago"},
-      {t:"Não tema o que dorme — tema o que desperta sem razão.", a:"— Tom de Alerta"},
-      {t:"Cada pôr do sol é um teste; cada amanhecer, uma vitória.", a:"— Cronista do Vale"},
-      {t:"Você carrega memórias que o mundo esqueceu.", a:"— Arquivista"},
-      {t:"No fim do crepúsculo, surge a verdadeira bravura.", a:"— Selo Antigo"},
-      {t:"A espada conhece o caminho; a mão precisa escolher seguir.", a:"— Manual do Guerreiro"},
-      {t:"O eco dos antigos conta histórias que só os corações ouvem.", a:"— Historiadora"},
-      {t:"Quando tudo parece esquecido, lembre-se do porquê começou.", a:"— Promessa Silenciosa"},
-      {t:"Sombras não são vazias — nelas vivem escolhas não feitas.", a:"— Observador"},
-      {t:"Em Hyrule, até as pedras guardam segredos de coragem.", a:"— Peregrino"},
-      {t:"A verdadeira jornada começa quando a certeza termina.", a:"— Horizonte"},
-      {t:"O silêncio antes da batalha é o compasso da esperança.", a:"— Maestro do Crepúsculo"},
-      {t:"O que vale é a chama que você acende dentro de si.", a:"— Portador da Luz"},
-      {t:"Não confunda calma com fraqueza — é onde se forjam heróis.", a:"— Sentinela"},
-      {t:"Olhe para o crepúsculo — há promessas nas cores do fim.", a:"— Pintor do Tempo"},
-      {t:"O chamado de Hyrule não se apaga; ele ecoa em quem responde.", a:"— Corvos do Reino"},
-      {t:"Muitas estradas levam ao mesmo lugar — escolha a que te define.", a:"— Caminhante"},
-      {t:"Até a menor tocha pode atravessar a noite mais longa.", a:"— Lâmpada do Lar"}
-    ];
-
-    // pick a random phrase on load
-    const idx = Math.floor(Math.random() * phrases.length);
-    const quoteText = document.getElementById('quoteText');
-    const quoteAuthor = document.getElementById('quoteAuthor');
-    quoteText.textContent = phrases[idx].t;
-    quoteAuthor.textContent = phrases[idx].a;
-
-    // fireworks / particles: small moving dots for ambience
-    (function particles(){
-      const c = document.getElementById('fx');
-      const ctx = c.getContext('2d');
-      let w = c.width = innerWidth;
-      let h = c.height = innerHeight;
-      const particles = [];
-      for(let i=0;i<60;i++){
-        particles.push({
-          x: Math.random()*w,
-          y: Math.random()*h,
-          vx: (Math.random()-0.5)*0.2,
-          vy: (Math.random()-0.5)*0.2,
-          r: 0.6 + Math.random()*2.2,
-          alpha: 0.08 + Math.random()*0.28,
-        });
-      }
-      function resize(){ w=c.width=innerWidth; h=c.height=innerHeight; }
-      addEventListener('resize', resize);
-      function draw(){
-        ctx.clearRect(0,0,w,h);
-        for(const p of particles){
-          p.x += p.vx;
-          p.y += p.vy;
-          if(p.x < -10) p.x = w+10;
-          if(p.x > w+10) p.x = -10;
-          if(p.y < -10) p.y = h+10;
-          if(p.y > h+10) p.y = -10;
-          ctx.beginPath();
-          ctx.fillStyle = 'rgba(214,182,107,'+p.alpha+')'; // golden glow
-          ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-          ctx.fill();
-        }
-        requestAnimationFrame(draw);
-      }
-      draw();
-    })();
-
-    // video + audio control
-    const startBtn = document.getElementById('startBtn');
-    const music = document.getElementById('music');
-    const mainVideo = document.getElementById('mainVideo');
-    const toggleSub = document.getElementById('toggleSub');
-    const pauseBtn = document.getElementById('pauseBtn');
-
-    // initially hide video until user starts (video element is present but paused)
-    mainVideo.style.visibility = 'hidden';
-    mainVideo.volume = 1.0;
-    music.volume = 0.85;
-
-    // Toggle description (subtitle) — here we can show/hide the author line
-    toggleSub.addEventListener('click', () => {
-      const shown = toggleSub.getAttribute('aria-pressed') === 'true';
-      toggleSub.setAttribute('aria-pressed', (!shown).toString());
-      document.getElementById('quoteAuthor').style.opacity = shown ? '0' : '1';
-    });
-
-    // Start experience
-    startBtn.addEventListener('click', async () => {
-      try {
-        startBtn.disabled = true;
-        startBtn.textContent = 'Carregando...';
-        // show video (for smooth transition)
-        mainVideo.style.visibility = 'visible';
-        // try to play video & audio — user gesture allows playback with sound
-        // Some browsers require video.muted = true to autoplay; but since we have gesture, we can play with sound.
-        // For maximum compatibility we attempt video.play(); then music.play();
-        await mainVideo.play().catch(async (e)=>{
-          // fallback: try muting video then play (rare)
-          mainVideo.muted = true;
-          await mainVideo.play().catch(err => { console.warn('video play failed even muted', err); });
-        });
-
-        // sync: start music slightly after video; ensure music plays (user gesture)
-        try { await music.play(); } catch(err) {
-          // if fails, try unmuting and play
-          music.muted = false;
-          await music.play().catch(e2 => console.warn('music play fail', e2));
-        }
-
-        // cinematic transition: fade out UI after a moment
-        document.querySelector('.frame').style.transition = 'opacity 1.2s ease, transform 1.2s ease';
-        document.querySelector('.frame').style.opacity = '0';
-        document.querySelector('.frame').style.transform = 'scale(0.98) translateY(8px)';
-
-        // show pause button
-        pauseBtn.style.display = 'inline-block';
-        pauseBtn.textContent = 'Pausar';
-
-        // when video ends, reveal UI again
-        mainVideo.onended = () => {
-          document.querySelector('.frame').style.opacity = '1';
-          pauseBtn.style.display = 'none';
-          startBtn.disabled = false;
-          startBtn.textContent = 'Reproduzir novamente';
-        };
-
-      } catch (err) {
-        console.error('Erro ao iniciar reprodução:', err);
-        alert('Não foi possível iniciar o vídeo. Atualize a página e tente novamente.');
-        startBtn.disabled = false;
-        startBtn.textContent = 'Iniciar';
-      }
-    });
-
-    // Pause/resume
-    pauseBtn.addEventListener('click', () => {
-      if(mainVideo.paused){
-        mainVideo.play(); music.play(); pauseBtn.textContent = 'Pausar';
-      } else {
-        mainVideo.pause(); music.pause(); pauseBtn.textContent = 'Retomar';
-      }
-    });
-
-    // Prevent accidental scrolling/pinch causing issues on mobile
-    document.addEventListener('touchmove', function(e){ if(e.scale && e.scale !== 1) e.preventDefault(); }, {passive:false});
-  </script>
 </body>
 </html>
