@@ -3,239 +3,232 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Twilight Surprise</title>
+<title>Twilight Memory</title>
 
 <style>
     @font-face {
-        font-family: 'WiiRegular';
-        src: url('fonts/WiiRegular.ttf') format('truetype');
+        font-family: "WiiRegular";
+        src: url("TPHylian-WiiRegular.otf");
     }
     @font-face {
-        font-family: 'GCNBold';
-        src: url('fonts/GCNBold.ttf') format('truetype');
+        font-family: "GCNBold";
+        src: url("TPHylian-GCNBold.otf");
     }
 
     body {
         margin: 0;
         overflow: hidden;
         background: black;
-        font-family: 'WiiRegular', sans-serif;
+        font-family: "WiiRegular", serif;
     }
 
-    /* ─────────────────────────────────────────────── */
-    /* 🔥 VIDEO CONTAINER — ALTERADO */
-    /* ─────────────────────────────────────────────── */
-
-    #videoContainer {
+    #bgVideo {
         position: fixed;
         top: 0; left: 0;
         width: 100vw;
         height: 100vh;
-        overflow: hidden;
+        object-fit: cover;
         z-index: 1;
     }
 
-    #backgroundVideo {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        object-fit: fill; /* Mantive exatamente como estava */
+    #secretVideo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;  /* largura exata da tela */
+    height: 100vh; /* altura exata da tela */
+    object-fit: fill; /* <-- ESTICA o vídeo pra caber */
+    z-index: 9999;
+    display: none;
+    background: black;
     }
-
-    /* ─────────────────────────────────────────────── */
-    /* 🔥 HITBOX FIXA AO VÍDEO — ALTERADO */
-    /* ─────────────────────────────────────────────── */
-
-    #linkHitbox {
-        position: absolute;
-        left: 42%;   /* ajuste se necessário */
-        top: 63%;    /* ajuste se necessário */
-        width: 12%;
-        height: 20%;
-
-        background: rgba(255, 0, 0, 0); /* invisível — coloque rgba(255,0,0,0.4) p/ debug */
-        display: none; /* só aparece após PRESS START */
-        z-index: 10;
-    }
-
-    /* ─────────────────────────────────────────────── */
-
+    
     #overlay {
         position: fixed;
         top: 0; left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0,0,0,0.7);
-        z-index: 5;
+        background: rgba(0,0,0,0.5);
+        z-index: 2;
         display: flex;
-        flex-direction: column;
-        align-items: center;
         justify-content: center;
-        text-align: center;
-        padding: 20px;
+        align-items: center;
+        flex-direction: column;
+        backdrop-filter: blur(2px);
     }
 
     #quote {
-        color: white;
-        font-size: 1.4rem;
-        margin-bottom: 30px;
-        max-width: 80%;
-        text-shadow: 0 0 8px black;
+        font-family: "WiiRegular";
+        color: #e8d8a8;
+        font-size: 1.3rem;
+        max-width: 90vw;
+        text-align: center;
+        margin-bottom: 40px;
+        text-shadow: 2px 2px 4px black;
     }
 
     #startButton {
-        font-family: 'GCNBold';
+        font-family: "GCNBold";
         font-size: 2rem;
-        color: white;
-        border: 3px solid white;
+        color: #e8d8a8;
+        border: 2px solid #e8d8a8;
         padding: 12px 28px;
-        background: rgba(0,0,0,0.5);
-        border-radius: 6px;
-        letter-spacing: 2px;
+        border-radius: 4px;
+        cursor: pointer;
+        background: rgba(0,0,0,0.6);
+        text-shadow: 2px 2px 4px black;
+        transition: 0.25s;
     }
 
-    #startButton:active {
-        transform: scale(0.96);
+    #startButton:hover {
+        background: rgba(255,255,255,0.1);
+        transform: scale(1.05);
     }
 
-    /* Easter egg video */
-    #easterEggVideo {
+    /* Fade overlay */
+    #fadeLayer {
         position: fixed;
         top: 0; left: 0;
         width: 100vw;
         height: 100vh;
-        z-index: 9999;
-        display: none;
         background: black;
-        object-fit: fill; /* conforme sua escolha */
+        z-index: 8;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 1s ease;
     }
 
-    .fadeOut {
-        animation: fadeOut 1s forwards;
-    }
-    .fadeIn {
-        animation: fadeIn 1s forwards;
-    }
-    @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+    /* INVISIBLE CLICK AREA ABOVE LINK'S HEAD */
+    #linkHitbox {
+        position: fixed;
+        width: 10vw;   /* responsive size */
+        height: 10vw;
+        max-width: 150px;
+        max-height: 150px;
+        left: 18vw;   /* from your marked screenshot */
+        top: 40vh;
+        z-index: 5;
+        background: rgba(0, 255, 0, 0.4); /* fully transparent */
     }
 </style>
 </head>
 
 <body>
 
-<!-- 🔥 NOVO CONTAINER DO VÍDEO (HITBOX DENTRO AQUI) -->
-<div id="videoContainer">
-    <video id="backgroundVideo" autoplay muted loop playsinline>
-        <source src="video/background.mp4" type="video/mp4">
-    </video>
+<!-- Background looping video -->
+<video id="bgVideo" src="video.mp4" autoplay loop muted playsinline></video>
 
-    <div id="linkHitbox"></div> <!-- movido para dentro do container -->
-</div>
+<!-- Secret cutscene -->
+<video id="secretVideo" src="easter-eggs/creepy-link-scene.mp4" playsinline></video>
 
-<!-- Fade overlay + frases + botão -->
+<!-- Music -->
+<audio id="bgMusic" src="music.mp3" loop></audio>
+<audio id="pressSound" src="press-start.mp3"></audio>
+
 <div id="overlay">
     <div id="quote"></div>
-    <button id="startButton">PRESS START</button>
+    <div id="startButton">PRESS START</div>
 </div>
 
-<!-- Vídeo do Easter Egg -->
-<video id="easterEggVideo" playsinline>
-    <source src="easter-eggs/creepy-link-scene.mp4" type="video/mp4">
-</video>
+<div id="fadeLayer"></div>
 
-<audio id="bgMusic" src="audio/music.mp3"></audio>
-<audio id="confirmSfx" src="audio/confirm.mp3"></audio>
+<!-- Invisible hitbox used for the 10-click easter egg -->
+<div id="linkHitbox"></div>
 
 <script>
-    const quotes = [
-        "“Shadow and light are two sides of the same coin.”",
-        "“A sword wields no strength unless the hand that holds it has courage.”",
-        "“The twilight there holds a serene beauty… You have seen it yourself as the sun sets on this world.”",
-        "“In the end, you must decide what to do… The path is yours to follow.”",
-        "“Courage need not be remembered, for it is never forgotten.”"
-    ];
+/* Famous Twilight Princess quotes */
+const quotes = [
+    "“A sword wields no strength unless the hand that holds it has courage.”",
+    "“Shadow and light are two sides of the same coin.”",
+    "“Hero of Twilight, lend your power to this sacred blade.”",
+    "“The twilight there holds a serene beauty… you have seen it for yourself.”",
+    "“I... I wanted to see you again, Link.”",
+    "“Courage need not be remembered, for it is never forgotten.”",
+    "“Light and shadow can't mix as one, but they can coexist.”"
+];
 
-    const quoteBox = document.getElementById("quote");
-    quoteBox.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+document.getElementById("quote").innerText =
+    quotes[Math.floor(Math.random() * quotes.length)];
 
-    const overlay = document.getElementById("overlay");
-    const startButton = document.getElementById("startButton");
-    const music = document.getElementById("bgMusic");
-    const sfx = document.getElementById("confirmSfx");
+const bgMusic = document.getElementById("bgMusic");
+const pressSound = document.getElementById("pressSound");
+const overlay = document.getElementById("overlay");
+const fadeLayer = document.getElementById("fadeLayer");
 
-    const linkHitbox = document.getElementById("linkHitbox");
+const bgVideo = document.getElementById("bgVideo");
+const secretVideo = document.getElementById("secretVideo");
 
-    let clicks = 0;
-    let clickTimeout;
-    const EGG_CLICKS = 10;
+document.getElementById("startButton").onclick = () => {
+    pressSound.play();
 
-    function fadeInMusic() {
-        music.volume = 0;
-        music.play();
-        let vol = 0;
-        const fadeInterval = setInterval(() => {
+    overlay.style.opacity = "0";
+    overlay.style.pointerEvents = "none";
+    overlay.style.transition = "opacity 1.5s ease";
+
+    /* Fade-in for music */
+    bgMusic.volume = 0;
+    bgMusic.play();
+    let vol = 0;
+    const fadeInterval = setInterval(() => {
+        if (vol < 1) {
             vol += 0.02;
-            if (vol >= 1) {
-                vol = 1;
-                clearInterval(fadeInterval);
-            }
-            music.volume = vol;
-        }, 80);
+            bgMusic.volume = vol;
+        } else {
+            clearInterval(fadeInterval);
+        }
+    }, 80);
+};
+
+/* Easter Egg: 10 fast clicks on Link hitbox */
+let clickCount = 0;
+let lastClickTime = 0;
+
+document.getElementById("linkHitbox").addEventListener("click", () => {
+    const now = Date.now();
+
+    if (now - lastClickTime < 400) {
+        clickCount++;
+    } else {
+        clickCount = 1;
     }
 
-    startButton.addEventListener("click", () => {
-        sfx.play();
-        overlay.classList.add("fadeOut");
+    lastClickTime = now;
 
-        setTimeout(() => {
-            overlay.style.display = "none";
-            fadeInMusic();
-            linkHitbox.style.display = "block"; // Hitbox aparece depois
-        }, 900);
-    });
+    if (clickCount >= 10) {
+        triggerSecretCutscene();
+        clickCount = 0;
+    }
+});
 
-    linkHitbox.addEventListener("click", () => {
-        clicks++;
-        clearTimeout(clickTimeout);
+function triggerSecretCutscene() {
+    /* Fade to black */
+    fadeLayer.style.opacity = "1";
 
-        clickTimeout = setTimeout(() => {
-            clicks = 0;
-        }, 500);
+    setTimeout(() => {
+        /* Pause music & main video */
+        bgMusic.pause();
+        bgVideo.pause();
 
-        if (clicks >= EGG_CLICKS) {
-            triggerEasterEgg();
-        }
-    });
+        /* Start secret video */
+        secretVideo.style.display = "block";
+        secretVideo.currentTime = 0;
+        secretVideo.play();
 
-    function triggerEasterEgg() {
-        clicks = 0;
-
-        const video = document.getElementById("easterEggVideo");
-
-        music.pause();
-
-        video.style.display = "block";
-        video.classList.add("fadeIn");
-
-        video.play();
-
-        video.onended = () => {
-            video.classList.remove("fadeIn");
-            video.classList.add("fadeOut");
+        /* When secret video ends, fade out */
+        secretVideo.onended = () => {
+            fadeLayer.style.opacity = "1";
 
             setTimeout(() => {
-                video.style.display = "none";
-                video.classList.remove("fadeOut");
-                fadeInMusic();
-            }, 900);
+                secretVideo.style.display = "none";
+                bgVideo.play();
+                bgMusic.play();
+                fadeLayer.style.opacity = "0";
+            }, 800);
         };
-    }
+
+        fadeLayer.style.opacity = "0";
+    }, 800);
+}
 </script>
 
 </body>
