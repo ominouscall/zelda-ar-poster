@@ -1,154 +1,179 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
-  <title>Zelda AR Poster - Corrigido</title>
-
-  <!-- A-Frame + MindAR -->
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
-
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Zelda AR Poster — Corrigido</title>
   <style>
-    html,body { height:100%; margin:0; background:#000; font-family:Inter,Arial,Helvetica,sans-serif; }
-    a-scene{ width:100%; height:100vh; display:block; }
-    #startButton{
-      position:fixed; inset:0; z-index:9999;
-      display:flex; align-items:center; justify-content:center;
-      background: rgba(0,0,0,0.85); color:#fff; font-size:20px;
-      -webkit-user-select:none; user-select:none; cursor:pointer;
-    }
-    #msg {
-      position: fixed; left: 12px; bottom: 12px; color:#ddd; font-size:12px; z-index:10000;
-    }
+    html,body { height:100%; margin:0; font-family:system-ui,Arial; background:#000; color:#fff; display:flex; align-items:center; justify-content:center; }
+    #app { width:100%; max-width:900px; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:12px; padding:16px; box-sizing:border-box; }
+    #viewer { width:100%; height:70vh; background:#111; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; border-radius:8px; }
+    #startBtn { padding:12px 18px; font-size:18px; border-radius:8px; border: none; background:#1e88e5; color:white; }
+    #msg { margin-top:8px; color:#ffcccb; }
+    #posterHint { font-size:14px; opacity:0.9; text-align:center; margin-top:8px; }
+    #fallback { font-size:14px; color:#ddd; margin-top:6px; }
+    #errorDetails { margin-top:8px; color:#ffa; white-space:pre-wrap; font-size:13px; }
+    canvas { width:100%; height:100%; display:block; }
   </style>
 </head>
 <body>
+  <div id="app">
+    <h1>Zelda AR Poster (corrigido)</h1>
 
-<div id="startButton">TOQUE PARA INICIAR (permita a câmera)</div>
-<div id="msg">Aponte a câmera para o pôster</div>
+    <div id="viewer" aria-live="polite">
+      <div id="placeholder">
+        <p>TOQUE PARA INICIAR (permita a câmera)</p>
+      </div>
+    </div>
 
-<a-scene
-  mindar-image="imageTargetSrc: target.mind; autoStart: false;"
-  embedded
-  vr-mode-ui="enabled: false"
-  color-space="sRGB">
+    <button id="startBtn">TOCAR PARA INICIAR AR (abrir câmera)</button>
 
-  <a-assets>
-    <!-- video e audio (nomes fáceis para substituir) -->
-    <video id="videoAsset" src="video.mp4" playsinline webkit-playsinline loop crossorigin="anonymous"></video>
-    <audio id="audioAsset" src="music.mp3" preload="auto" loop></audio>
-  </a-assets>
+    <div id="posterHint">Aponte a câmera para o pôster quando a experiência iniciar.</div>
 
-  <!-- Entidade que será usada pela câmera AR -->
-  <!-- O motor do MindAR irá arrancar a câmera quando chamarmos start() -->
-  <a-entity camera></a-entity>
+    <div id="msg" role="status" aria-atomic="true"></div>
+    <div id="errorDetails"></div>
+    <div id="fallback"></div>
+  </div>
 
-  <!-- Container do target (vídeo sobreposto ao targetIndex 0) -->
-  <a-entity id="targetEntity" mindar-image-target="targetIndex: 0" visible="false">
-    <!-- aqui usamos a-video como filho do entity -->
-    <a-video id="planeVideo"
-             src="#videoAsset"
-             width="1.0"
-             height="0.56"
-             position="0 0 0"
-             rotation="0 0 0"
-             material="shader: flat; opacity: 1;">
-    </a-video>
-  </a-entity>
+  <!-- MindAR + three.js via CDN (versão pública). Se preferir, faça build local/npm -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-three.prod.js"></script>
 
-</a-scene>
+  <script>
+    // Elementos UI
+    const startBtn = document.getElementById('startBtn');
+    const msg = document.getElementById('msg');
+    const viewer = document.getElementById('viewer');
+    const errorDetails = document.getElementById('errorDetails');
+    const fallback = document.getElementById('fallback');
 
-<script>
-(async () => {
-  const startButton = document.getElementById('startButton');
-  const msg = document.getElementById('msg');
-  const scene = document.querySelector('a-scene');
-  const videoEl = document.getElementById('videoAsset');
-  const audioEl = document.getElementById('audioAsset');
-  const targetEntity = document.getElementById('targetEntity');
+    // Substitua esses caminhos pelos seus presentes no repositório
+    const TARGET_MIND_URL = './targets.mind'; // já presente no repo
+    const VIDEO_OVERLAY = './video.mp4';
+    const AUDIO_URL = './music.mp3';
+    const POSTER_PNG = './poster.png';
 
-  // pega o sistema MindAR (A-Frame)
-  function getMindarSystem() {
-    return scene && scene.systems && scene.systems["mindar-image-system"];
-  }
-
-  // Função para iniciar MindAR (camera + tracking)
-  async function startMindAR() {
-    const mindar = getMindarSystem();
-    if (!mindar) throw new Error("MindAR system não encontrado (verifique se script foi carregado).");
-    try {
-      // start() abre a câmera e começa o pipeline de tracking
-      await mindar.start();
-      console.log("MindAR: câmera iniciada.");
-      msg.innerText = "Câmera ativada — aponte para o pôster";
-    } catch (err) {
-      console.error("Erro ao iniciar MindAR:", err);
-      throw err;
+    // Função utilitária para mostrar mensagens
+    function showStatus(text, isError=false) {
+      msg.textContent = text;
+      msg.style.color = isError ? '#ff6b6b' : '#9fffa3';
     }
-  }
 
-  // Eventos do sistema: targetFound / targetLost são emitidos no document a-scene
-  scene.addEventListener("targetFound", (e) => {
-    console.log("targetFound", e);
-    // torna visível a entidade (caso esteja invisível)
-    targetEntity.setAttribute('visible', 'true');
+    // Verificação básica de contexto seguro
+    function isSecureContextForCamera() {
+      // getUserMedia requires secure origin: https OR localhost
+      return (window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+    }
 
-    // tenta tocar mídias (já houve gesture pelo botão)
-    const p1 = videoEl.play().catch(err => { console.warn("video.play erro:", err); });
-    const p2 = audioEl.play().catch(err => { console.warn("audio.play erro:", err); });
+    // Função principal para inicializar MindAR + three
+    async function startAR() {
+      startBtn.disabled = true;
+      errorDetails.textContent = '';
+      fallback.textContent = '';
+      showStatus('Inicializando... aguarde');
 
-    Promise.all([p1, p2]).then(() => {
-      console.log("Mídias tocando.");
+      if (!isSecureContextForCamera()) {
+        const text = 'Esta página precisa ser servida via HTTPS (ou executada em localhost). Por favor, hospede em HTTPS (ex.: GitHub Pages) ou use http://localhost.';
+        showStatus(text, true);
+        fallback.textContent = 'Sugestão: publique no GitHub Pages ou rode um servidor local e acesse via http://localhost.';
+        startBtn.disabled = false;
+        return;
+      }
+
+      try {
+        // Antes de inicializar MindAR, fazemos uma pequena solicitação de permissão (user gesture)
+        // Isso força o prompt de permissão de câmera em muitos navegadores.
+        showStatus('Solicitando acesso à câmera...');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        // imediatamente paramos o stream porque MindAR irá cuidar da câmera internamente
+        stream.getTracks().forEach(t => t.stop());
+
+        // Configuração MindAR (three)
+        const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+          container: viewer,
+          imageTargetSrc: TARGET_MIND_URL,
+          maxTrack: 1,
+          // você pode ajustar width/height se quiser
+        });
+
+        const {renderer, scene, camera} = mindarThree;
+
+        // Criar plano para mostrar o vídeo quando o target for encontrado
+        const planeGeometry = new THREE.PlaneGeometry(1, 1);
+        const video = document.createElement('video');
+        video.src = VIDEO_OVERLAY;
+        video.crossOrigin = 'anonymous';
+        video.loop = true;
+        video.muted = true;     // para permitir autoplay em alguns navegadores; se quiser som, remova e controle após toque
+        video.playsInline = true;
+        await video.load();
+
+        const videoTexture = new THREE.VideoTexture(video);
+        const planeMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+        // ajusta escala do plano (aqui você calibra conforme o tamanho do target)
+        plane.scale.set(1.0, 1.0, 1.0);
+
+        // Criar anchor com índice 0 (primeiro target do arquivo .mind)
+        const anchor = mindarThree.addAnchor(0);
+        anchor.group.add(plane);
+
+        // opcional: tocar música de fundo (controlado pelo usuário)
+        const audio = new Audio(AUDIO_URL);
+        audio.loop = true;
+        audio.preload = 'auto';
+        // por padrão não tocar; se quiser que toque ao detectar, você pode descomentar o play em anchor de detecção abaixo
+        // audio.muted = false;
+
+        anchor.onTargetFound = () => {
+          console.log('Target encontrado');
+          showStatus('Target encontrado — vídeo sendo reproduzido');
+          // tentar tocar vídeo (já garantimos permissão)
+          video.play().catch(e => console.warn('falha ao reproduzir vídeo:', e));
+          // audio.play().catch(e => console.warn('falha ao reproduzir audio:', e));
+        };
+        anchor.onTargetLost = () => {
+          console.log('Target perdido');
+          showStatus('Aponte a câmera para o pôster');
+          video.pause();
+          // audio.pause();
+        };
+
+        // loop de render
+        await mindarThree.start();
+        renderer.setAnimationLoop(() => {
+          renderer.render(scene, camera);
+        });
+
+        showStatus('Pronto — aponte a câmera para o pôster');
+        startBtn.style.display = 'none'; // escondemos botão depois de iniciado
+
+      } catch (err) {
+        console.error(err);
+        let details = '';
+        if (err && err.name) {
+          details = `${err.name}: ${err.message || ''}`;
+        } else {
+          details = String(err);
+        }
+        errorDetails.textContent = details;
+        showStatus('Não foi possível ativar a câmera. Verifique permissões e tente novamente.', true);
+
+        // dicas para o usuário
+        fallback.innerHTML = 'Dicas: 1) Verifique se o site está em HTTPS; 2) Verifique permissões do site no Chrome (Menu → Informações do site → Permissões → Câmera).';
+        startBtn.disabled = false;
+      }
+    }
+
+    // Gatilho por clique/touch — necessário para que navegadores aceitem mostrar o prompt
+    startBtn.addEventListener('click', async (e) => {
+      // Evitar múltiplos cliques
+      startBtn.disabled = true;
+      // startAR cuida do resto e reabilita o botão em caso de erro
+      await startAR();
     });
-  });
-
-  scene.addEventListener("targetLost", (e) => {
-    console.log("targetLost", e);
-    targetEntity.setAttribute('visible', 'false');
-    // pausar para economizar CPU / bateria
-    try { videoEl.pause(); } catch(e) {}
-    try { audioEl.pause(); } catch(e) {}
-  });
-
-  // Quando o usuário clica 'TOQUE PARA INICIAR'
-  startButton.addEventListener('click', async () => {
-    startButton.style.display = 'none';
-    msg.innerText = "Solicitando permissão para câmera...";
-
-    // tentativa de tocar áudio/vídeo imediatamente (garante permissões de autoplay após gesture)
-    try {
-      await audioEl.play().catch(()=>{}); // pode falhar, mas pedimos a permissão
-      await videoEl.play().catch(()=>{});
-      // pausamos de imediato — quando target for encontrado vamos tocar de novo
-      videoEl.pause();
-      audioEl.pause();
-    } catch(e) {
-      console.warn("Tentativa inicial play falhou:", e);
-    }
-
-    // inicia MindAR (abre câmera e tracking)
-    try {
-      await startMindAR();
-    } catch(err) {
-      alert("Não foi possível ativar a câmera. Verifique permissões e tente novamente.");
-      startButton.style.display = 'flex';
-      return;
-    }
-
-    // opcional: mostrar instrução curta
-    msg.innerText = "Aponte a câmera para o pôster. Toque no pôster (se necessário).";
-  });
-
-  // limpar quando a página for descartada
-  window.addEventListener('pagehide', async () => {
-    const mindar = getMindarSystem();
-    if (mindar) {
-      try { await mindar.stop(); } catch(e){/*ignore*/ }
-    }
-  });
-
-})();
-</script>
+  </script>
 </body>
 </html>
