@@ -39,7 +39,7 @@
         filter: brightness(1.05) saturate(1.15) hue-rotate(8deg) contrast(1.05) saturate(1.08);
     }
     .nightFilter {
-       filter: brightness(0.65) saturate(0.85) hue-rotate(-25deg) contrast(0.92) brightness(0.85);
+        filter: brightness(0.65) saturate(0.85) hue-rotate(-25deg) contrast(0.92) brightness(0.85);
     }
 
     #secretVideo {
@@ -124,11 +124,11 @@
 
 <body>
 
-<video id="bgVideo" src="video.mp4" autoplay loop muted playsinline></video>
+<!-- VIDEO NOW SWITCHES AUTOMATICALLY BASED ON ORIENTATION -->
+<video id="bgVideo" src="video-vertical.mp4" autoplay loop muted playsinline></video>
 
 <video id="secretVideo" src="easter-eggs/creepy-link-scene.mp4" playsinline></video>
 
-<!-- NOVO: o arquivo src original não é mais usado -->
 <audio id="bgMusic"></audio>
 <audio id="pressSound" src="press-start.mp3"></audio>
 
@@ -164,17 +164,42 @@ const fadeLayer = document.getElementById("fadeLayer");
 const bgVideo = document.getElementById("bgVideo");
 const secretVideo = document.getElementById("secretVideo");
 
-/* --- NEW MUSIC SYSTEM --- */
-const musicList = [];
+/* =====================================================
+   ORIENTATION RESPONSIVE VIDEO SWITCH (NEW FEATURE)
+===================================================== */
+function updateVideoByOrientation() {
+    const isLandscape = window.matchMedia("(orientation: landscape)").matches;
 
-// load music1.mp3 to music10.mp3
+    const newSrc = isLandscape
+        ? "video-horizontal.mp4"
+        : "video-vertical.mp4";
+
+    if (bgVideo.src.includes(newSrc)) return;
+
+    const currentTime = bgVideo.currentTime;
+    const wasPaused = bgVideo.paused;
+
+    bgVideo.src = newSrc;
+
+    bgVideo.onloadedmetadata = () => {
+        bgVideo.currentTime = currentTime;
+        if (!wasPaused) bgVideo.play();
+    };
+}
+
+updateVideoByOrientation();
+window.addEventListener("orientationchange", updateVideoByOrientation);
+window.addEventListener("resize", updateVideoByOrientation);
+/* ===================================================== */
+
+/* --- NEW MUSIC SYSTEM (unchanged from previous version) --- */
+const musicList = [];
 for (let i = 1; i <= 10; i++) {
     musicList.push(`music/music${i}.mp3`);
 }
 
 let lastTrack = -1;
 
-// pick a different random index
 function getRandomTrack() {
     let index;
     do {
@@ -188,8 +213,6 @@ function playRandomMusic() {
     bgMusic.src = getRandomTrack();
     bgMusic.play();
 }
-
-// when song ends, play another
 bgMusic.onended = playRandomMusic;
 
 /* ---------- TIME FILTER ---------- */
@@ -216,7 +239,7 @@ document.getElementById("startButton").onclick = () => {
     overlay.style.transition = "opacity 1.5s ease";
 
     bgMusic.volume = 0;
-    playRandomMusic(); // NEW
+    playRandomMusic();
 
     let vol = 0;
     const fadeInterval = setInterval(() => {
