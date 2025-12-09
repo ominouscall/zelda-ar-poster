@@ -22,7 +22,6 @@
         font-family: "WiiRegular", serif;
     }
 
-    /* background video: transition added so filters crossfade smoothly */
     #bgVideo {
         position: fixed;
         top: 0; left: 0;
@@ -30,10 +29,9 @@
         height: 100vh;
         object-fit: cover;
         z-index: 1;
-        transition: filter 1s ease; /* <--- adicionado */
+        transition: filter 1s ease;
     }
 
-    /* morning / afternoon / night filters */
     .morningFilter {
         filter: brightness(1.15) saturate(1.1) sepia(0.08) hue-rotate(-5deg) contrast(1.03);
     }
@@ -48,9 +46,9 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 100vw;  /* largura exata da tela */
-        height: 100vh; /* altura exata da tela */
-        object-fit: fill; /* <-- ESTICA o vídeo pra caber */
+        width: 100vw;
+        height: 100vh;
+        object-fit: fill;
         z-index: 9999;
         display: none;
         background: black;
@@ -98,7 +96,6 @@
         transform: scale(1.05);
     }
 
-    /* Fade overlay */
     #fadeLayer {
         position: fixed;
         top: 0; left: 0;
@@ -111,31 +108,28 @@
         transition: opacity 1s ease;
     }
 
-    /* INVISIBLE CLICK AREA ABOVE LINK'S HEAD */
     #linkHitbox {
         position: fixed;
-        width: 10vw;   /* responsive size */
+        width: 10vw;
         height: 10vw;
         max-width: 150px;
         max-height: 150px;
-        left: 18vw;   /* from your marked screenshot */
+        left: 18vw;
         top: 40vh;
         z-index: 5;
-        background: rgba(255, 0, 0, 0); /* fully transparent */
+        background: rgba(255, 0, 0, 0);
     }
 </style>
 </head>
 
 <body>
 
-<!-- Background looping video -->
 <video id="bgVideo" src="video.mp4" autoplay loop muted playsinline></video>
 
-<!-- Secret cutscene -->
 <video id="secretVideo" src="easter-eggs/creepy-link-scene.mp4" playsinline></video>
 
-<!-- Music -->
-<audio id="bgMusic" src="music.mp3" loop></audio>
+<!-- NOVO: o arquivo src original não é mais usado -->
+<audio id="bgMusic"></audio>
 <audio id="pressSound" src="press-start.mp3"></audio>
 
 <div id="overlay">
@@ -145,11 +139,10 @@
 
 <div id="fadeLayer"></div>
 
-<!-- Invisible hitbox used for the 10-click easter egg -->
 <div id="linkHitbox"></div>
 
 <script>
-/* Famous Twilight Princess quotes */
+/* Quotes */
 const quotes = [
     "“A sword wields no strength unless the hand that holds it has courage.”",
     "“Shadow and light are two sides of the same coin.”",
@@ -171,29 +164,50 @@ const fadeLayer = document.getElementById("fadeLayer");
 const bgVideo = document.getElementById("bgVideo");
 const secretVideo = document.getElementById("secretVideo");
 
-/* ---------- TIME-OF-DAY FILTER (ADDED) ---------- */
+/* --- NEW MUSIC SYSTEM --- */
+const musicList = [];
+
+// load music1.mp3 to music10.mp3
+for (let i = 1; i <= 10; i++) {
+    musicList.push(`music/music${i}.mp3`);
+}
+
+let lastTrack = -1;
+
+// pick a different random index
+function getRandomTrack() {
+    let index;
+    do {
+        index = Math.floor(Math.random() * musicList.length);
+    } while (index === lastTrack);
+    lastTrack = index;
+    return musicList[index];
+}
+
+function playRandomMusic() {
+    bgMusic.src = getRandomTrack();
+    bgMusic.play();
+}
+
+// when song ends, play another
+bgMusic.onended = playRandomMusic;
+
+/* ---------- TIME FILTER ---------- */
 function applyTimeFilter() {
-    // local device hour
     const hour = new Date().getHours();
-    // remove any previously applied classes
     bgVideo.classList.remove('morningFilter', 'afternoonFilter', 'nightFilter');
 
     if (hour >= 6 && hour < 12) {
-        // morning
         bgVideo.classList.add('morningFilter');
     } else if (hour >= 12 && hour < 18) {
-        // afternoon
         bgVideo.classList.add('afternoonFilter');
     } else {
-        // night (18:00 - 06:00)
         bgVideo.classList.add('nightFilter');
     }
 }
-
-// call once at load
 applyTimeFilter();
-/* ---------- END TIME FILTER ---------- */
 
+/* ---------- START BUTTON ---------- */
 document.getElementById("startButton").onclick = () => {
     pressSound.play();
 
@@ -201,9 +215,9 @@ document.getElementById("startButton").onclick = () => {
     overlay.style.pointerEvents = "none";
     overlay.style.transition = "opacity 1.5s ease";
 
-    /* Fade-in for music */
     bgMusic.volume = 0;
-    bgMusic.play();
+    playRandomMusic(); // NEW
+
     let vol = 0;
     const fadeInterval = setInterval(() => {
         if (vol < 1) {
@@ -215,7 +229,7 @@ document.getElementById("startButton").onclick = () => {
     }, 80);
 };
 
-/* Easter Egg: 10 fast clicks on Link hitbox */
+/* ---------- SECRET CUTSCENE ---------- */
 let clickCount = 0;
 let lastClickTime = 0;
 
@@ -237,27 +251,23 @@ document.getElementById("linkHitbox").addEventListener("click", () => {
 });
 
 function triggerSecretCutscene() {
-    /* Fade to black */
     fadeLayer.style.opacity = "1";
 
     setTimeout(() => {
-        /* Pause music & main video */
         bgMusic.pause();
         bgVideo.pause();
 
-        /* Start secret video */
         secretVideo.style.display = "block";
         secretVideo.currentTime = 0;
         secretVideo.play();
 
-        /* When secret video ends, fade out */
         secretVideo.onended = () => {
             fadeLayer.style.opacity = "1";
 
             setTimeout(() => {
                 secretVideo.style.display = "none";
                 bgVideo.play();
-                bgMusic.play();
+                playRandomMusic();
                 fadeLayer.style.opacity = "0";
             }, 800);
         };
