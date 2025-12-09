@@ -22,6 +22,7 @@
         font-family: "WiiRegular", serif;
     }
 
+    /* background video: transition added so filters crossfade smoothly */
     #bgVideo {
         position: fixed;
         top: 0; left: 0;
@@ -29,18 +30,30 @@
         height: 100vh;
         object-fit: cover;
         z-index: 1;
+        transition: filter 1s ease; /* <--- adicionado */
+    }
+
+    /* morning / afternoon / night filters */
+    .morningFilter {
+        filter: brightness(1.12) saturate(1.08) sepia(0.06) hue-rotate(-8deg);
+    }
+    .afternoonFilter {
+        filter: brightness(1.02) saturate(1.12) hue-rotate(6deg) contrast(1.02);
+    }
+    .nightFilter {
+        filter: brightness(0.62) saturate(0.85) hue-rotate(-25deg) contrast(0.95);
     }
 
     #secretVideo {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;  /* largura exata da tela */
-    height: 100vh; /* altura exata da tela */
-    object-fit: fill; /* <-- ESTICA o vídeo pra caber */
-    z-index: 9999;
-    display: none;
-    background: black;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;  /* largura exata da tela */
+        height: 100vh; /* altura exata da tela */
+        object-fit: fill; /* <-- ESTICA o vídeo pra caber */
+        z-index: 9999;
+        display: none;
+        background: black;
     }
     
     #overlay {
@@ -157,6 +170,29 @@ const fadeLayer = document.getElementById("fadeLayer");
 
 const bgVideo = document.getElementById("bgVideo");
 const secretVideo = document.getElementById("secretVideo");
+
+/* ---------- TIME-OF-DAY FILTER (ADDED) ---------- */
+function applyTimeFilter() {
+    // local device hour
+    const hour = new Date().getHours();
+    // remove any previously applied classes
+    bgVideo.classList.remove('morningFilter', 'afternoonFilter', 'nightFilter');
+
+    if (hour >= 6 && hour < 12) {
+        // morning
+        bgVideo.classList.add('morningFilter');
+    } else if (hour >= 12 && hour < 18) {
+        // afternoon
+        bgVideo.classList.add('afternoonFilter');
+    } else {
+        // night (18:00 - 06:00)
+        bgVideo.classList.add('nightFilter');
+    }
+}
+
+// call once at load
+applyTimeFilter();
+/* ---------- END TIME FILTER ---------- */
 
 document.getElementById("startButton").onclick = () => {
     pressSound.play();
