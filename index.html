@@ -3,114 +3,141 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Twilight Tribute</title>
+<title>Twilight Princess Tribute</title>
 
-<!-- Zelda-style font -->
-<link href="https://fonts.cdnfonts.com/css/zelda" rel="stylesheet">
+<!-- Google Fonts (Zelda vibes) -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Spectral:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
     body {
         margin: 0;
         padding: 0;
-        font-family: 'Zelda', serif;
-        background: #000;
+        background: black;
+        color: #fff;
+        font-family: 'Cinzel', serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
         overflow: hidden;
-        color: #e2d7b7;
-    }
-
-    .center {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
         text-align: center;
-        width: 90%;
-        max-width: 900px;
+    }
+
+    #container {
         opacity: 1;
-        transition: opacity 1s ease;
+        transition: opacity 1.2s ease-in-out;
     }
 
-    h1 {
-        font-size: 2.2rem;
-        text-shadow: 0 0 15px #d6c299;
-        line-height: 1.4;
-        opacity: 0;
-        animation: fadeInText 2s forwards;
+    #quote {
+        font-size: 1.4rem;
+        max-width: 90%;
+        margin-bottom: 30px;
+        text-shadow: 0 0 8px rgba(255,255,255,0.4);
+        animation: fadeIn 2.2s ease forwards;
     }
 
-    @keyframes fadeInText {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    #startBtn {
-        margin-top: 40px;
-        padding: 15px 35px;
-        border: 2px solid #c3a878;
-        background: rgba(0,0,0,0.5);
-        color: #e2d7b7;
-        font-size: 1.5rem;
-        border-radius: 8px;
+    #startButton {
+        padding: 12px 22px;
+        font-size: 1.2rem;
+        border: 2px solid #cbb27a;
+        background: transparent;
+        color: #cbb27a;
+        border-radius: 6px;
         cursor: pointer;
-        transition: 0.3s;
+        transition: all 0.3s ease;
+        font-family: 'Cinzel', serif;
     }
 
-    #startBtn:hover {
-        background: rgba(255,255,255,0.1);
+    #startButton:hover {
+        background: #cbb27a;
+        color: black;
         transform: scale(1.05);
+        box-shadow: 0 0 12px #cbb27a;
     }
 
-    video {
-        position: absolute;
+    #videoContainer {
+        display: none;
+        width: 100%;
+        height: 100vh;
+        background: black;
+        position: fixed;
         top: 0;
         left: 0;
+    }
+
+    #videoContainer video {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        display: none;
     }
 
-    audio {
-        display: none;
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 </style>
 </head>
+
 <body>
 
-<video id="video" src="video.mp4"></video>
-<audio id="music" src="music.mp3"></audio>
-
-<div class="center" id="intro">
-    <h1 id="quote">Loading...</h1>
-    <button id="startBtn">Begin</button>
+<div id="container">
+    <div id="quote"></div>
+    <button id="startButton">Enter the Twilight</button>
 </div>
 
+<div id="videoContainer">
+    <!-- LOOP ATIVADO -->
+    <video id="mainVideo" src="video.mp4" loop></video>
+</div>
+
+<!-- ÁUDIO COM LOOP -->
+<audio id="bgm" src="music.mp3" loop></audio>
+
 <script>
+// Zelda Twilight Princess quotes — as requested, all from the actual game.
 const quotes = [
-    "A sword wields no strength unless the hand that holds it has courage.",
-    "Shadow and light are two sides of the same coin.",
-    "In our world, we must always coexist with the light.",
-    "Courage is the key that will open the path before you.",
-    "A hero chosen by the gods... destined to bring balance.",
-    "The twilight holds secrets only the brave can face.",
-    "Darkness may rise, but light will always return.",
-    "This power is granted only to those with a true heart."
+    "“Shadow and light are two sides of the same coin… one cannot exist without the other.” – Princess Zelda",
+    "“A sword wields no strength unless the hand that holds it has courage.” – The Hero's Shade",
+    "“In the darkness, we can still find light to guide us.” – Zelda",
+    "“No matter how dark the night, morning always comes.” – Telma",
+    "“Courage need not be remembered, for it is never forgotten.” – Hero's Shade",
+    "“Those who do not know the danger of wielding power will, before long, be ruled by it.” – Midna",
+    "“Your path has been chosen. You must go.” – Midna",
+    "“I... I believe in you.” – Midna",
+    "“Link… I wanted to leave you with one more memory.” – Midna",
+    "“Thank you… for everything.” – Midna"
 ];
 
-document.getElementById("quote").textContent =
+// pick quote
+document.getElementById("quote").innerText =
     quotes[Math.floor(Math.random() * quotes.length)];
 
-document.getElementById("startBtn").addEventListener("click", () => {
-    const intro = document.getElementById("intro");
-    const video = document.getElementById("video");
-    const music = document.getElementById("music");
+const startButton = document.getElementById("startButton");
+const videoContainer = document.getElementById("videoContainer");
+const mainVideo = document.getElementById("mainVideo");
+const bgm = document.getElementById("bgm");
 
-    intro.style.opacity = "0";
-    setTimeout(() => intro.style.display = "none", 1000);
+startButton.addEventListener("click", async () => {
 
-    video.style.display = "block";
-    video.play();
-    music.play();
+    // Show video container
+    videoContainer.style.display = "block";
+
+    // Fade out the menu
+    document.getElementById("container").style.opacity = 0;
+
+    // Play video (already looping)
+    mainVideo.play().catch(err => console.log("Video failed:", err));
+
+    // AUDIO FADE IN — 3 seconds
+    bgm.volume = 0;
+    bgm.play().then(() => {
+        let vol = 0;
+        const fade = setInterval(() => {
+            vol += 0.02;
+            bgm.volume = vol;
+            if (vol >= 1) clearInterval(fade);
+        }, 60); // ~3s fade-in
+    }).catch(err => console.log("BGM failed:", err));
 });
 </script>
 
