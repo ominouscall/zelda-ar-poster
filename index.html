@@ -1,144 +1,469 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zelda AR Poster</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-three.prod.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Zelda AR Poster — Robust AR + Fallback</title>
 
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      font-family: Arial, sans-serif;
+    :root {
+      --ui-z: 9999;
+      --bg: #000;
+      --accent: #1e88e5;
+      --txt: #fff;
     }
-
-    #ar-container {
-      width: 100vw;
-      height: 100vh;
-      position: fixed;
-      top: 0;
-      left: 0;
-      overflow: hidden;
+    html,body {
+      height:100%;
+      margin:0;
+      background:var(--bg);
+      color:var(--txt);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
     }
-
+    /* container where MindAR/three will append the canvas */
+    #view {
+      position:fixed;
+      inset:0;
+      width:100vw;
+      height:100vh;
+      background:#000;
+      overflow:hidden;
+      display:block;
+    }
+    /* ensure canvas covers entire viewport */
     canvas {
-      width: 100% !important;
-      height: 100% !important;
-      position: absolute;
-      top: 0;
-      left: 0;
+      width:100% !important;
+      height:100% !important;
+      position:absolute;
+      inset:0;
+      object-fit:cover;
     }
 
-    #start-btn {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 14px 24px;
-      font-size: 18px;
-      border: none;
-      background: #1e88e5;
-      color: white;
-      border-radius: 10px;
-      z-index: 20;
+    /* preview video (fallback) */
+    video#cameraPreview {
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      position:absolute;
+      inset:0;
     }
 
-    #status {
-      color: white;
-      position: fixed;
-      top: 15px;
-      width: 100%;
-      text-align: center;
-      z-index: 30;
-      font-size: 16px;
-      text-shadow: 0 0 5px black;
+    /* UI overlay controls */
+    #ui {
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:18px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:center;
+      z-index:var(--ui-z);
+      pointer-events:auto;
+    }
+    .btn {
+      background:var(--accent);
+      border:none;
+      color:white;
+      padding:12px 18px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:15px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      cursor:pointer;
+    }
+    .btn.ghost {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    #topMsg {
+      position:fixed;
+      top:14px;
+      left:50%;
+      transform:translateX(-50%);
+      padding:8px 14px;
+      background:rgba(0,0,0,0.45);
+      border-radius:10px;
+      z-index:var(--ui-z);
+      font-size:14px;
+      max-width:90%;
+      text-align:center;
+      pointer-events:none;
+    }
+
+    #details {
+      position:fixed;
+      left:14px;
+      bottom:14px;
+      z-index:var(--ui-z);
+      color:#ddd;
+      font-size:12px;
+      background:rgba(0,0,0,0.45);
+      padding:10px;
+      border-radius:8px;
+      max-width:40%;
+      word-wrap:break-word;
+    }
+
+    select, label { font-size:14px; }
+
+    /* small screens: shrink details */
+    @media (max-width:600px) {
+      #details { display:none; }
+      .btn { padding:10px 14px; font-size:14px; }
     }
   </style>
+
+  <!-- three + mind-ar (CDN). Versões utilizadas aqui estão relativamente estáveis. -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-three.prod.js"></script>
 </head>
-
 <body>
-  <div id="status">Toque para iniciar</div>
-  <button id="start-btn">Iniciar AR</button>
-  <div id="ar-container"></div>
+  <div id="view" aria-live="polite"></div>
 
-  <script>
-    const container = document.getElementById("ar-container");
-    const btn = document.getElementById("start-btn");
-    const statusMsg = document.getElementById("status");
+  <!-- top message -->
+  <div id="topMsg">Toque <strong>Iniciar AR</strong> para ativar a câmera e detectar o pôster.</div>
 
-    const TARGET = "./targets.mind";
-    const VIDEO_OVERLAY = "./video.mp4";
+  <!-- UI -->
+  <div id="ui">
+    <button id="startBtn" class="btn">Iniciar AR</button>
+    <button id="retryBtn" class="btn ghost" style="display:none;">Tentar MindAR novamente</button>
+    <button id="muteBtn" class="btn ghost" title="Ativar/desativar som" style="display:none;">Som: Mudo</button>
+    <label for="camSelect" style="display:none;">
+      <select id="camSelect" style="padding:8px;border-radius:8px;background:rgba(255,255,255,0.04);color:#fff;border:none;">
+        <option>Carregando câmeras...</option>
+      </select>
+    </label>
+  </div>
 
-    let mindarThree;
-    let started = false;
+  <div id="details" aria-hidden="false">
+    <div><strong>Status:</strong> <span id="status">Aguardando ação</span></div>
+    <div style="margin-top:8px;"><strong>Debug:</strong><pre id="debug" style="white-space:pre-wrap;margin:0;padding:0;"></pre></div>
+  </div>
 
-    btn.addEventListener("click", async () => {
-      if (started) return;
-      started = true;
+<script>
+/*
+  Robust AR index.html
+  - Tenta iniciar MindAR (biblioteca) para experiência AR completa
+  - Se falhar, faz fallback para preview via getUserMedia (mostra câmera em tela cheia)
+  - Permite selecionar câmera (quando disponível) e re-tentar MindAR
+  - Reproduz vídeo quando o target é detectado; música pode ser tocada no gesto inicial
 
-      btn.style.display = "none";
-      statusMsg.textContent = "Abrindo câmera...";
+  Recursos esperados (coloque no mesmo diretório):
+    - targets.mind
+    - video.mp4
+    - music.mp3
 
-      try {
-        // MindAR gerencia a câmera — NÃO USE getUserMedia
-        mindarThree = new window.MINDAR.IMAGE.MindARThree({
-          container: container,
-          imageTargetSrc: TARGET,
-        });
+  Observações:
+    - NÃO chame getUserMedia antes de MindAR start (pode causar conflitos). Aqui só chamamos getUserMedia no fallback
+    - Mantenha o site em HTTPS
+*/
 
-        const { renderer, scene, camera } = mindarThree;
+const TARGET_MIND = './targets.mind';
+const VIDEO_OVERLAY = './video.mp4';
+const AUDIO_FILE = './music.mp3';
 
-        // --- VÍDEO SOBRE POSTER ---
-        const video = document.createElement("video");
-        video.src = VIDEO_OVERLAY;
-        video.crossOrigin = "anonymous";
-        video.loop = true;
-        video.muted = true;
-        video.playsInline = true;
-        await video.load();
+const view = document.getElementById('view');
+const startBtn = document.getElementById('startBtn');
+const retryBtn = document.getElementById('retryBtn');
+const muteBtn = document.getElementById('muteBtn');
+const camSelect = document.getElementById('camSelect');
+const statusEl = document.getElementById('status');
+const debugEl = document.getElementById('debug');
+const topMsg = document.getElementById('topMsg');
 
-        const texture = new THREE.VideoTexture(video);
-        const plane = new THREE.Mesh(
-          new THREE.PlaneGeometry(1, 1),
-          new THREE.MeshBasicMaterial({ map: texture })
-        );
+let mindarThree = null;
+let mindarStarted = false;
+let fallbackStream = null;
+let previewVideoEl = null;
+let availableCameras = [];
+let audioEl = null;
+let overlayVideoEl = null;
+let muted = true;
 
-        const anchor = mindarThree.addAnchor(0);
-        anchor.group.add(plane);
+function logDebug(...args) {
+  console.log(...args);
+  debugEl.textContent += args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ') + '\n';
+  debugEl.scrollTop = debugEl.scrollHeight;
+}
+function setStatus(t) {
+  statusEl.textContent = t;
+  topMsg.innerHTML = t;
+}
 
-        anchor.onTargetFound = () => {
-          statusMsg.textContent = "Poster detectado!";
-          video.play();
-        };
-
-        anchor.onTargetLost = () => {
-          statusMsg.textContent = "Aponte para o pôster.";
-          video.pause();
-        };
-
-        await mindarThree.start();
-        statusMsg.textContent = "Aponte para o pôster";
-
-        renderer.setAnimationLoop(() => {
-          renderer.render(scene, camera);
-        });
-      }
-
-      catch (err) {
-        console.error(err);
-        statusMsg.textContent = "Erro ao acessar a câmera.";
-        btn.style.display = "block";
-        started = false;
-      }
+// utility: enumerates video input devices and fills select
+async function populateCameras() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    availableCameras = devices.filter(d => d.kind === 'videoinput');
+    camSelect.innerHTML = '';
+    if (availableCameras.length === 0) {
+      const opt = document.createElement('option');
+      opt.textContent = 'Nenhuma câmera encontrada';
+      camSelect.appendChild(opt);
+      camSelect.parentElement.style.display = 'none';
+      return;
+    }
+    availableCameras.forEach((c, i) => {
+      const opt = document.createElement('option');
+      opt.value = c.deviceId;
+      opt.textContent = c.label || `Câmera ${i+1}`;
+      camSelect.appendChild(opt);
     });
-  </script>
+    camSelect.parentElement.style.display = 'inline-block';
+  } catch (err) {
+    logDebug('Erro enumerateDevices:', err);
+    camSelect.parentElement.style.display = 'none';
+  }
+}
+
+// Start MindAR flow (primary approach). DO NOT call getUserMedia before this.
+async function startMindAR(selectedDeviceId = null) {
+  try {
+    setStatus('Inicializando MindAR...');
+    logDebug('Criando MindARThree...');
+
+    // dispose previous if exists
+    if (mindarThree) {
+      try {
+        await mindarThree.stop();
+      } catch(e){/* ignore */}
+      try { mindarThree.renderer.setAnimationLoop(null); } catch(e){}
+      mindarThree = null;
+    }
+
+    // options: do not provide camera constraints here - MindAR will use environment by default,
+    // but some implementations accept `maxTrack`, `uiElement` etc.
+    mindarThree = new window.MINDAR.IMAGE.MindARThree({
+      container: view,
+      imageTargetSrc: TARGET_MIND,
+      uiScanning: false,
+      maxTrack: 1,
+    });
+
+    const {renderer, scene, camera} = mindarThree;
+
+    // create overlay video mesh (won't be visible until target found)
+    overlayVideoEl = document.createElement('video');
+    overlayVideoEl.src = VIDEO_OVERLAY;
+    overlayVideoEl.loop = true;
+    overlayVideoEl.muted = true; // muted allows autoplay in many browsers
+    overlayVideoEl.playsInline = true;
+    overlayVideoEl.crossOrigin = 'anonymous';
+
+    // Preload video metadata
+    await overlayVideoEl.load().catch(e => logDebug('overlay video load warning', e));
+
+    const videoTexture = new THREE.VideoTexture(overlayVideoEl);
+    const material = new THREE.MeshBasicMaterial({map: videoTexture});
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(1,1), material);
+    plane.scale.set(1.0, 1.0, 1.0);
+
+    const anchor = mindarThree.addAnchor(0);
+    anchor.group.add(plane);
+
+    // audio element (we'll play it after gesture)
+    audioEl = new Audio(AUDIO_FILE);
+    audioEl.loop = true;
+    audioEl.preload = 'auto';
+    audioEl.muted = muted;
+
+    anchor.onTargetFound = () => {
+      setStatus('Pôster detectado — reproduzindo vídeo e áudio (se ativado).');
+      overlayVideoEl.play().catch(e => logDebug('overlay video play failed:', e));
+      if (!muted) {
+        audioEl.play().catch(e => logDebug('audio play failed:', e));
+      }
+    };
+    anchor.onTargetLost = () => {
+      setStatus('Pôster perdido — aponte a câmera para o pôster.');
+      overlayVideoEl.pause();
+      // we keep audio playing if user chose unmuted; adjust as desired
+    };
+
+    // Try to start MindAR — MindAR handles camera internally.
+    await mindarThree.start();
+    mindarStarted = true;
+    setStatus('MindAR iniciado — aponte a câmera para o pôster');
+    retryBtn.style.display = 'none';
+    muteBtn.style.display = 'inline-block';
+    muteBtn.textContent = muted ? 'Som: Mudo' : 'Som: Ligado';
+
+    renderer.setAnimationLoop(() => {
+      renderer.render(scene, camera);
+    });
+
+    logDebug('MindAR started');
+    return true;
+  } catch (err) {
+    logDebug('MindAR start error:', err);
+    setStatus('Erro ao iniciar MindAR. Caindo para preview.');
+    mindarStarted = false;
+    retryBtn.style.display = 'inline-block';
+    return false;
+  }
+}
+
+// Fallback: show simple camera preview (no AR). Allows user feedback (camera visible) and lets them select camera or retry MindAR.
+async function startCameraPreview(preferDeviceId = null) {
+  try {
+    setStatus('Abrindo preview da câmera...');
+    // stop any previous fallback stream
+    if (fallbackStream) {
+      fallbackStream.getTracks().forEach(t => t.stop());
+      fallbackStream = null;
+    }
+    // remove any previous preview video
+    if (previewVideoEl) {
+      previewVideoEl.remove();
+      previewVideoEl = null;
+    }
+
+    // Try to pick environment camera first if deviceId not provided
+    let constraints;
+    if (preferDeviceId) {
+      constraints = { video: { deviceId: { exact: preferDeviceId } }, audio: false };
+    } else {
+      constraints = { video: { facingMode: { ideal: "environment" } }, audio: false };
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    fallbackStream = stream;
+
+    // create preview video element
+    previewVideoEl = document.createElement('video');
+    previewVideoEl.id = 'cameraPreview';
+    previewVideoEl.autoplay = true;
+    previewVideoEl.playsInline = true;
+    previewVideoEl.muted = true; // don't need to hear audio
+    previewVideoEl.srcObject = stream;
+
+    // clear view and append preview
+    view.innerHTML = '';
+    view.appendChild(previewVideoEl);
+
+    setStatus('Preview da câmera ativo — se o AR falhou nesse dispositivo, tente outro navegador / aparelho.');
+    retryBtn.style.display = 'inline-block';
+    muteBtn.style.display = 'none';
+
+    // populate camera list now that stream is available (labels are revealed only after permission)
+    await populateCameras();
+
+    return true;
+  } catch (err) {
+    logDebug('Preview start error:', err);
+    setStatus('Erro ao abrir preview da câmera. Verifique permissões e tente novamente.');
+    retryBtn.style.display = 'inline-block';
+    return false;
+  }
+}
+
+// stops mindar and fallback stream
+async function stopAll() {
+  try {
+    if (mindarThree && mindarStarted) {
+      await mindarThree.stop();
+      mindarThree.renderer.setAnimationLoop(null);
+      mindarThree = null;
+      mindarStarted = false;
+    }
+  } catch(e){ logDebug('Erro ao parar MindAR', e); }
+
+  try {
+    if (fallbackStream) {
+      fallbackStream.getTracks().forEach(t => t.stop());
+      fallbackStream = null;
+    }
+    if (previewVideoEl) {
+      previewVideoEl.remove();
+      previewVideoEl = null;
+    }
+  } catch(e){ logDebug('Erro ao parar preview', e); }
+}
+
+// Toggle mute/unmute for audio
+function toggleMute() {
+  muted = !muted;
+  if (audioEl) {
+    audioEl.muted = muted;
+    if (!muted) {
+      audioEl.play().catch(e => logDebug('Audio play fail after unmute', e));
+    } else {
+      try { audioEl.pause(); } catch(e) {}
+    }
+  }
+  muteBtn.textContent = muted ? 'Som: Mudo' : 'Som: Ligado';
+}
+
+// Main flow triggered by Start button
+startBtn.addEventListener('click', async () => {
+  startBtn.disabled = true;
+  debugEl.textContent = '';
+  logDebug('Usuário clicou iniciar. Tentando MindAR...');
+  setStatus('Tentando iniciar MindAR...');
+  // Clear view area
+  view.innerHTML = '';
+
+  // First: try MindAR (primary approach). MindAR will request camera permission internally.
+  const ok = await startMindAR();
+  if (!ok) {
+    // If MindAR fails, show camera preview as fallback
+    logDebug('MindAR falhou. Iniciando preview fallback.');
+    await startCameraPreview();
+  } else {
+    // MindAR started fine
+  }
+  startBtn.disabled = false;
+});
+
+// Retry MindAR button: attempts to stop preview and try MindAR again
+retryBtn.addEventListener('click', async () => {
+  retryBtn.disabled = true;
+  setStatus('Tentando reiniciar MindAR...');
+  logDebug('Usuário pediu retry MindAR');
+  // stop preview
+  try {
+    if (fallbackStream) {
+      fallbackStream.getTracks().forEach(t => t.stop());
+      fallbackStream = null;
+    }
+    if (previewVideoEl) {
+      previewVideoEl.remove();
+      previewVideoEl = null;
+    }
+    view.innerHTML = '';
+  } catch(e){ logDebug('Erro ao limpar preview', e); }
+
+  const ok = await startMindAR();
+  if (!ok) {
+    setStatus('MindAR ainda falha — mantendo preview (se disponível).');
+    await startCameraPreview(camSelect.value || null);
+  }
+  retryBtn.disabled = false;
+});
+
+// Mute button
+muteBtn.addEventListener('click', () => {
+  toggleMute();
+});
+
+// Camera select: when user chooses a device, switch preview to that device
+camSelect.addEventListener('change', async (e) => {
+  const devId = camSelect.value;
+  logDebug('Usuário selecionou deviceId:', devId);
+  // restart preview with chosen device
+  await startCameraPreview(devId);
+});
+
+// On load: populate camera list (labels may be empty until permission is granted)
+populateCameras().catch(e => logDebug('populateCameras initial fail', e));
+
+// Before unload: stop streams
+window.addEventListener('pagehide', async () => {
+  try { await stopAll(); } catch(e){/*ignore*/ }
+});
+
+</script>
 </body>
 </html>
