@@ -6,7 +6,7 @@
 <title>Twilight Memory</title>
 
 <style>
-    /* Fontes do projeto */
+    /* Fontes */
     @font-face {
         font-family: "WiiRegular";
         src: url("TPHylian-WiiRegular.otf");
@@ -16,7 +16,7 @@
         src: url("TPHylian-GCNBold.otf");
     }
 
-    /* Corpo da página */
+    /* Corpo */
     body {
         margin: 0;
         overflow: hidden;
@@ -24,7 +24,7 @@
         font-family: "WiiRegular", serif;
     }
 
-    /* Vídeo principal de fundo */
+    /* Vídeo de fundo */
     #bgVideo {
         position: fixed;
         top: 0; left: 0;
@@ -36,18 +36,18 @@
         opacity: 1;
     }
 
-    /* Filtros por horário do dia */
+    /* Filtros */
     .morningFilter {
         filter: brightness(1.15) saturate(1.1) sepia(0.08) hue-rotate(-5deg) contrast(1.03);
     }
     .afternoonFilter {
-        filter: brightness(1.05) saturate(1.15) hue-rotate(8deg) contrast(1.05) saturate(1.08);
+        filter: brightness(1.05) saturate(1.15) hue-rotate(8deg) contrast(1.05);
     }
     .nightFilter {
-        filter: brightness(0.65) saturate(0.85) hue-rotate(-25deg) contrast(0.92) brightness(0.85);
+        filter: brightness(0.65) saturate(0.85) hue-rotate(-25deg) brightness(0.85);
     }
 
-    /* Vídeo do easter egg de 10 cliques */
+    /* Vídeo secreto */
     #secretVideo {
         position: fixed;
         top: 0;
@@ -60,7 +60,7 @@
         background: black;
     }
 
-    /* Tela inicial com botão Start */
+    /* Tela de Start */
     #overlay {
         position: fixed;
         top: 0; left: 0;
@@ -75,7 +75,6 @@
         backdrop-filter: blur(2px);
     }
 
-    /* Frase aleatória */
     #quote {
         font-family: "WiiRegular";
         color: #e8d8a8;
@@ -86,7 +85,6 @@
         text-shadow: 2px 2px 4px black;
     }
 
-    /* Botão Press Start */
     #startButton {
         font-family: "GCNBold";
         font-size: 2rem;
@@ -99,13 +97,12 @@
         text-shadow: 2px 2px 4px black;
         transition: 0.25s;
     }
-
     #startButton:hover {
         background: rgba(255,255,255,0.1);
         transform: scale(1.05);
     }
 
-    /* Fade usado em transições */
+    /* Fade geral */
     #fadeLayer {
         position: fixed;
         top: 0; left: 0;
@@ -118,7 +115,7 @@
         transition: opacity 1s ease;
     }
 
-    /* Hitbox do easter egg secreto (10 cliques) */
+    /* Hitbox do easter egg */
     #linkHitbox {
         position: fixed;
         width: 10vw;
@@ -131,7 +128,7 @@
         background: rgba(255, 0, 0, 0);
     }
 
-    /* Área dos botões da Ocarina */
+    /* Container das teclas da Ocarina */
     .ocarina-container {
         position: fixed;
         right: 20px;
@@ -144,24 +141,41 @@
         align-items: flex-end;
     }
 
-    /* Botões individuais da Ocarina */
+    /* Ícone da Ocarina (novo) */
+    #ocarinaIcon {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        width: 90px;
+        opacity: 0;
+        z-index: 10;
+        display: none;
+        animation: wiggle 2.5s infinite ease-in-out;
+        transition: opacity 1s ease;
+    }
+
+    /* Wiggle leve */
+    @keyframes wiggle {
+        0%   { transform: translateY(0px) rotate(0deg); }
+        50%  { transform: translateY(-4px) rotate(-2deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    /* Botões */
     .ocarina-btn {
         width: 65px;
         height: 65px;
         cursor: pointer;
-        transition: transform 0.12s ease;
         -webkit-tap-highlight-color: transparent !important;
-        outline: none !important;
-        user-select: none;
+        transition: transform 0.12s ease;
         opacity: 0.82;
     }
 
-    /* Feedback imediato ao toque */
     .ocarina-btn:active {
         transform: scale(0.86);
     }
 
-    /* Botão UP levemente mais alto (formato triangular) */
+    /* Botão UP mais alto */
     #btnUp {
         transform: translateY(-22px);
     }
@@ -170,19 +184,22 @@
 
 <body>
 
-<!-- Vídeo de fundo principal -->
+<!-- Vídeo principal -->
 <video id="bgVideo" src="video-vertical.mp4" autoplay loop muted playsinline></video>
 
-<!-- Vídeo do easter egg de 10 cliques -->
+<!-- Vídeo secreto -->
 <video id="secretVideo" src="easter-eggs/creepy-link-scene.mp4" playsinline></video>
 
-<!-- Música de fundo -->
+<!-- Música -->
 <audio id="bgMusic"></audio>
 
-<!-- Som do Press Start -->
-<audio id="pressSound" src="sounds/OOT_MainMenu_Select.wav"></audio>
+<!-- Som Start -->
+<audio id="pressSound" src="press-start.mp3"></audio>
 
-<!-- Botões da Ocarina (aparecem apenas quando elegível) -->
+<!-- Ícone da Ocarina (novo) -->
+<img id="ocarinaIcon" src="ocarina/ocarina-icon.png">
+
+<!-- Teclas da Ocarina -->
 <div id="ocarina" class="ocarina-container" style="display:none;">
     <img id="btnLeft"  class="ocarina-btn" src="ocarina/left-ar-oc.png">
     <img id="btnUp"    class="ocarina-btn" src="ocarina/up-ar-oc.png">
@@ -195,14 +212,14 @@
     <div id="startButton">PRESS START</div>
 </div>
 
-<!-- Layer de fade -->
+<!-- Fade -->
 <div id="fadeLayer"></div>
 
-<!-- Hitbox para easter egg de 10 cliques -->
+<!-- Hitbox -->
 <div id="linkHitbox"></div>
 
 <script>
-/* Frases aleatórias */
+/* Frases */
 const quotes = [
 "“A sword wields no strength unless the hand that holds it has courage.”",
 "“Shadow and light are two sides of the same coin.”",
@@ -214,64 +231,55 @@ const quotes = [
 ];
 
 document.getElementById("quote").innerText =
-    quotes[Math.floor(Math.random() * quotes.length)];
+  quotes[Math.floor(Math.random() * quotes.length)];
 
-/* Elementos principais */
+/* Elementos */
 const bgMusic = document.getElementById("bgMusic");
 const pressSound = document.getElementById("pressSound");
 const overlay = document.getElementById("overlay");
 const fadeLayer = document.getElementById("fadeLayer");
 const bgVideo = document.getElementById("bgVideo");
 const secretVideo = document.getElementById("secretVideo");
+const ocarinaIcon = document.getElementById("ocarinaIcon");
 
-/* Estado do modo Lullaby */
 window.lullabyMode = false;
 
-/* Troca de vídeo conforme orientação do dispositivo */
+/* Troca vídeo por orientação */
 function updateVideoByOrientation() {
     const isLandscape = window.matchMedia("(orientation: landscape)").matches;
 
-        /* Seleciona vídeo normal ou versão Lullaby */
     const newSrc = isLandscape
         ? (window.lullabyMode ? "ocarina/zelda-lullaby-horizontal.mp4" : "video-horizontal.mp4")
         : (window.lullabyMode ? "ocarina/zelda-lullaby-vertical.mp4"   : "video-vertical.mp4");
 
-    /* Se já está no vídeo certo, não troca */
     if (bgVideo.src.includes(newSrc)) return;
 
-    /* Guarda tempo e estado do vídeo atual */
     const t = bgVideo.currentTime;
     const paused = bgVideo.paused;
 
-    /* Fade-out antes de trocar */
     bgVideo.style.opacity = "0";
 
     setTimeout(() => {
         bgVideo.src = newSrc;
-
-        /* Restaura posição e play após carregar */
         bgVideo.onloadedmetadata = () => {
             try { bgVideo.currentTime = Math.min(t, bgVideo.duration || 0); } catch(e){}
             if (!paused) bgVideo.play();
-
-            /* Fade-in */
             setTimeout(() => bgVideo.style.opacity = "1", 120);
         };
     }, 250);
 }
 
-/* Atualiza vídeo inicialmente e também em mudanças de orientação */
 updateVideoByOrientation();
 window.addEventListener("orientationchange", updateVideoByOrientation);
 window.addEventListener("resize", updateVideoByOrientation);
 
-/* Lista de músicas de fundo */
+    /* Lista das músicas */
 const musicList = [];
 for (let i = 1; i <= 10; i++) musicList.push(`music/music${i}.mp3`);
 
 let lastTrack = -1;
 
-/* Escolhe música aleatória diferente da anterior */
+/* Música aleatória */
 function getRandomTrack() {
     let i;
     do i = Math.floor(Math.random() * musicList.length);
@@ -280,60 +288,105 @@ function getRandomTrack() {
     return musicList[i];
 }
 
-/* Toca música aleatória */
 function playRandomMusic() {
     bgMusic.src = getRandomTrack();
     bgMusic.play();
 }
-
 bgMusic.onended = playRandomMusic;
 
-/* Filtro visual por horário */
+/* Filtro por horário */
 function applyTimeFilter() {
-    const hour = new Date().getHours();
-    bgVideo.classList.remove('morningFilter','afternoonFilter','nightFilter');
+    const h = new Date().getHours();
+    bgVideo.classList.remove("morningFilter","afternoonFilter","nightFilter");
 
-    if (hour >= 6 && hour < 12) bgVideo.classList.add('morningFilter');
-    else if (hour >= 12 && hour <18) bgVideo.classList.add('afternoonFilter');
-    else bgVideo.classList.add('nightFilter');
+    if (h >= 6 && h < 12) bgVideo.classList.add("morningFilter");
+    else if (h >= 12 && h < 18) bgVideo.classList.add("afternoonFilter");
+    else bgVideo.classList.add("nightFilter");
 }
 applyTimeFilter();
 
-/* Flags para exibição da Ocarina */
+/* Lógica de visitas */
+let visits = Number(localStorage.getItem("visits") || 0) + 1;
+localStorage.setItem("visits", visits);
+
+/* Regras para aparecer a Ocarina */
 let ocarinaShouldAppear = false;
+if (visits === 4) ocarinaShouldAppear = true;
+else if (visits > 4 && Math.random() < 0.30) ocarinaShouldAppear = true;
 
 /* Clique no botão Start */
 document.getElementById("startButton").onclick = () => {
 
-    /* Som do botão */
     pressSound.play();
 
-    /* Fade da tela inicial */
     overlay.style.opacity = "0";
     overlay.style.pointerEvents = "none";
     overlay.style.transition = "opacity 1.5s ease";
 
-    /* Música de fundo com fade-in */
     bgMusic.volume = 0;
     playRandomMusic();
-
     let v = 0;
-    const f = setInterval(() => {
+    const fadeM = setInterval(() => {
         if (v < 1) { v += 0.02; bgMusic.volume = v; }
-        else clearInterval(f);
+        else clearInterval(fadeM);
     }, 80);
 
-    /* Exibe Ocarina quando elegível */
+    /* Só mostra o ícone da ocarina agora */
     if (ocarinaShouldAppear) {
-        const oc = document.getElementById("ocarina");
-        oc.style.display = "flex";
-        setTimeout(() => oc.style.opacity = "1", 60);
+        showOcarinaIcon();
     }
 };
 
-/* ------------------------------------------
-   Easter Egg de 10 cliques na hitbox
------------------------------------------- */
+/* ----------------------------------------------------------
+   SEQUÊNCIA NOVA: Ocarina Found → ícone → clique → teclas
+---------------------------------------------------------- */
+
+/* EFEITOS */
+const ocarinaFoundSfx = new Audio("ocarina/ocarina-found.wav");
+const ocarinaSelectSfx = new Audio("ocarina/select-ocarina.wav");
+
+function showOcarinaIcon() {
+
+    /* Toca som de descoberta */
+    ocarinaFoundSfx.currentTime = 0;
+    ocarinaFoundSfx.play();
+
+    /* Espera 1s antes de aparecer */
+    setTimeout(() => {
+        ocarinaIcon.style.display = "block";
+        setTimeout(() => {
+            ocarinaIcon.style.opacity = "1";
+        }, 30);
+    }, 1000);
+}
+
+/* Ao clicar no ícone */
+ocarinaIcon.addEventListener("click", () => {
+
+    /* Som de clique */
+    ocarinaSelectSfx.currentTime = 0;
+    ocarinaSelectSfx.play();
+
+    /* Some rápido */
+    ocarinaIcon.style.transition = "opacity 0.25s ease";
+    ocarinaIcon.style.opacity = "0";
+
+    setTimeout(() => {
+        ocarinaIcon.style.display = "none";
+        showOcarinaButtons();
+    }, 260);
+});
+
+/* Mostrar as teclas */
+function showOcarinaButtons() {
+    const oc = document.getElementById("ocarina");
+    oc.style.display = "flex";
+    setTimeout(() => oc.style.opacity = "1", 60);
+}
+
+/* ----------------------------------------------------------
+   Easter Egg oculto: 10 cliques rápidos na hitbox
+---------------------------------------------------------- */
 
 let clickCount = 0;
 let lastClickTime = 0;
@@ -341,52 +394,41 @@ let lastClickTime = 0;
 document.getElementById("linkHitbox").addEventListener("click", () => {
     const now = Date.now();
 
-    /* Clicou rápido? soma. Clicou lento? reinicia. */
     if (now - lastClickTime < 400) clickCount++;
     else clickCount = 1;
 
     lastClickTime = now;
 
-    /* Ativa easter egg */
     if (clickCount >= 10) {
         triggerSecretCutscene();
         clickCount = 0;
     }
 });
 
-/* Ativação do easter egg de 10 cliques */
+/* Vídeo secreto */
 function triggerSecretCutscene() {
 
-    /* Fade inicial */
     fadeLayer.style.opacity = "1";
 
     setTimeout(() => {
 
-        /* Pausa tudo */
         bgMusic.pause();
         bgVideo.pause();
 
-        /* Mostra vídeo secreto */
         secretVideo.style.display = "block";
         secretVideo.currentTime = 0;
         secretVideo.play();
 
-        /* Quando vídeo terminar */
         secretVideo.onended = () => {
 
-            /* Segundo fade antes de voltar ao normal */
             fadeLayer.style.opacity = "1";
 
             setTimeout(() => {
 
-                /* Some vídeo secreto */
                 secretVideo.style.display = "none";
-
-                /* Retoma vídeo e música */
                 bgVideo.play();
                 playRandomMusic();
 
-                /* Fade-out final */
                 fadeLayer.style.opacity = "0";
 
             }, 800);
@@ -397,29 +439,20 @@ function triggerSecretCutscene() {
     }, 800);
 }
 
-/* ------------------------------------------
-      OCARINA: lógica de visitas
------------------------------------------- */
+/* ----------------------------------------------------------
+   Lógica da execução musical da Ocarina
+---------------------------------------------------------- */
 
-let visits = Number(localStorage.getItem("visits") || 0) + 1;
-localStorage.setItem("visits", visits);
-
-/* Mostra a ocarina na 4ª visita, ou com 30% nas demais */
-if (visits === 4) ocarinaShouldAppear = true;
-else if (visits > 4 && Math.random() < 0.30) ocarinaShouldAppear = true;
-
-/* Sequência tocada pelo usuário */
 const seq = [];
 const correctSeq = ["L","U","R","L","U","R"];
 
-/* Sons das notas */
 const sounds = {
     L: new Audio("ocarina/left-oc.mp3"),
     U: new Audio("ocarina/up-oc.mp3"),
     R: new Audio("ocarina/right-oc.mp3"),
 };
 
-/* ------------------------------------------
+ /* ------------------------------------------
       Tocar uma nota da Ocarina
 ------------------------------------------ */
 function playNote(note) {
