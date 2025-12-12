@@ -175,10 +175,14 @@
         transform: scale(0.86);
     }
 
-    /* Botão UP mais alto */
-    #btnUp {
+    /* Wrapper para elevar o botão Up sem afetar o transform do botão */
+    .ocarina-up-wrapper {
         transform: translateY(-22px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
+
 </style>
 </head>
 
@@ -194,7 +198,7 @@
 <audio id="bgMusic"></audio>
 
 <!-- Som Start -->
-<audio id="pressSound" src="sounds/OOT_MainMenu_Select.wav"></audio>
+<audio id="pressSound" src="press-start.mp3"></audio>
 
 <!-- Ícone da Ocarina (novo) -->
 <img id="ocarinaIcon" src="ocarina/ocarina-icon.png">
@@ -202,7 +206,9 @@
 <!-- Teclas da Ocarina -->
 <div id="ocarina" class="ocarina-container" style="display:none;">
     <img id="btnLeft"  class="ocarina-btn" src="ocarina/left-ar-oc.png">
-    <img id="btnUp"    class="ocarina-btn" src="ocarina/up-ar-oc.png">
+    <div class="ocarina-up-wrapper">
+        <img id="btnUp"    class="ocarina-btn" src="ocarina/up-ar-oc.png">
+    </div>
     <img id="btnRight" class="ocarina-btn" src="ocarina/right-ar-oc.png">
 </div>
 
@@ -273,7 +279,7 @@ updateVideoByOrientation();
 window.addEventListener("orientationchange", updateVideoByOrientation);
 window.addEventListener("resize", updateVideoByOrientation);
 
-    /* Lista das músicas */
+/* Lista das músicas */
 const musicList = [];
 for (let i = 1; i <= 10; i++) musicList.push(`music/music${i}.mp3`);
 
@@ -312,7 +318,7 @@ localStorage.setItem("visits", visits);
 /* Regras para aparecer a Ocarina */
 let ocarinaShouldAppear = false;
 if (visits === 4) ocarinaShouldAppear = true;
-else if (visits > 4 && Math.random() < 0.10) ocarinaShouldAppear = true;
+else if (visits > 4 && Math.random() < 0.30) ocarinaShouldAppear = true;
 
 /* Clique no botão Start */
 document.getElementById("startButton").onclick = () => {
@@ -342,7 +348,7 @@ document.getElementById("startButton").onclick = () => {
 ---------------------------------------------------------- */
 
 /* EFEITOS */
-const ocarinaFoundSfx = new Audio("ocarina/fairy-ocarina-get.mp3");
+const ocarinaFoundSfx = new Audio("ocarina/ocarina-found.wav");
 const ocarinaSelectSfx = new Audio("ocarina/select-ocarina.wav");
 
 function showOcarinaIcon() {
@@ -394,11 +400,13 @@ let lastClickTime = 0;
 document.getElementById("linkHitbox").addEventListener("click", () => {
     const now = Date.now();
 
+    /* Clicou rápido? soma. Clicou lento? reinicia. */
     if (now - lastClickTime < 400) clickCount++;
     else clickCount = 1;
 
     lastClickTime = now;
 
+    /* Ativa easter egg */
     if (clickCount >= 10) {
         triggerSecretCutscene();
         clickCount = 0;
@@ -452,103 +460,93 @@ const sounds = {
     R: new Audio("ocarina/right-oc.mp3"),
 };
 
- /* ------------------------------------------
-      Tocar uma nota da Ocarina
------------------------------------------- */
-function playNote(note) {
+/* Tocar nota */
+function playNote(n) {
 
-    /* Armazena nota */
-    seq.push(note);
+    /* Toca som imediatamente */
+    sounds[n].currentTime = 0;
+    sounds[n].play();
 
-    /* Reinicia som para tocar imediatamente */
-    sounds[note].currentTime = 0;
-    sounds[note].play();
-
-    /* Mantém apenas o tamanho da sequência-correta */
+    /* Guarda sequência */
+    seq.push(n);
     if (seq.length > correctSeq.length) seq.shift();
 
-    /* Verifica se a música certa foi tocada */
+    /* Verifica se acertou */
     if (seq.join("") === correctSeq.join("")) {
         seq.length = 0;
         triggerLullabySequence();
     }
 }
 
-/* Eventos de clique nos botões */
+/* Eventos */
 document.getElementById("btnLeft").addEventListener("click", () => playNote("L"));
 document.getElementById("btnUp").addEventListener("click", () => playNote("U"));
 document.getElementById("btnRight").addEventListener("click", () => playNote("R"));
 
-/* ------------------------------------------
-      Ativação do Easter Egg da Lullaby
------------------------------------------- */
+/* ----------------------------------------------------------
+     Ativação do evento Lullaby
+---------------------------------------------------------- */
 
 function triggerLullabySequence() {
 
-    /* Som de acerto imediato */
+    /* Som de acerto */
     const correctSound = new Audio("ocarina/song-correct.mp3");
     correctSound.currentTime = 0;
     correctSound.play();
 
-    /* Some a Ocarina com fade */
+    /* Some as teclas */
     const oc = document.getElementById("ocarina");
     oc.style.transition = "opacity 0.6s ease";
     oc.style.opacity = "0";
 
     setTimeout(() => {
 
-        /* Escurece a tela */
+        /* Escurece tela */
         fadeLayer.style.transition = "opacity 0.6s ease";
         fadeLayer.style.opacity = "1";
 
-        /* Pausa áudio e vídeo atuais */
         try { bgMusic.pause(); } catch(e){}
         try { bgVideo.pause(); } catch(e){}
 
-        /* Toca a música curta antes da transição */
+        /* Toca música curta antes da troca */
         const oot = new Audio("ocarina/oot-lullaby.mp3");
         oot.currentTime = 0;
         oot.play();
 
         oot.onended = () => {
 
-            /* Esconde a ocarina permanentemente */
             oc.style.display = "none";
 
-            /* Ativa modo Lullaby (troca de vídeo) */
+            /* Ativa modo Lullaby */
             window.lullabyMode = true;
 
-            /* Fade-out antes da troca */
+            /* Fade */
             bgVideo.style.opacity = "0";
 
-            /* Atualiza vídeo conforme orientação */
+            /* Troca vídeo conforme orientação */
             updateVideoByOrientation();
 
-            /* Quando novo vídeo carregar */
             bgVideo.onloadedmetadata = () => {
 
-                /* Reinicia do começo */
                 try { bgVideo.currentTime = 0; } catch(e){}
                 try { bgVideo.play(); } catch(e){}
 
-                /* Fade-in suave do novo vídeo */
                 setTimeout(() => {
                     bgVideo.style.opacity = "1";
                 }, 180);
             };
 
-            /* Começa música bg no music3.mp3 */
+            /* Toca music3 primeiro */
             bgMusic.src = "music/music3.mp3";
             bgMusic.currentTime = 0;
             bgMusic.play();
 
-            /* Quando music3 acabar → playlist aleatória volta ao normal */
             bgMusic.onended = () => {
                 bgMusic.onended = playRandomMusic;
                 playRandomMusic();
             };
 
-            /* Fade-out final do escuro */
+            /* Desfade */
             setTimeout(() => {
                 fadeLayer.style.opacity = "0";
             }, 350);
