@@ -330,12 +330,22 @@ document.getElementById("startButton").onclick = () => {
     overlay.style.transition = "opacity 1.5s ease";
 
     bgMusic.volume = 0;
+
+ /* Se NÃO houver evento da ocarina → música começa agora */
+ if (!ocarinaShouldAppear) {
     playRandomMusic();
     let v = 0;
     const fadeM = setInterval(() => {
         if (v < 1) { v += 0.02; bgMusic.volume = v; }
         else clearInterval(fadeM);
     }, 80);
+}
+
+/* Se houver ocarina → música começa depois */
+if (ocarinaShouldAppear) {
+    showOcarinaIcon();
+}
+
 
     /* Só mostra o ícone da ocarina agora */
     if (ocarinaShouldAppear) {
@@ -356,6 +366,19 @@ function showOcarinaIcon() {
     /* Toca som de descoberta */
     ocarinaFoundSfx.currentTime = 0;
     ocarinaFoundSfx.play();
+
+    ocarinaFoundSfx.onended = () => {
+
+    /* Agora sim começa a música de fundo */
+    playRandomMusic();
+
+    let v = 0;
+    const fadeM = setInterval(() => {
+        if (v < 1) { v += 0.02; bgMusic.volume = v; }
+        else clearInterval(fadeM);
+    }, 80);
+
+};
 
     /* Espera 1s antes de aparecer */
     setTimeout(() => {
