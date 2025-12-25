@@ -318,7 +318,7 @@ localStorage.setItem("visits", visits);
 /* Regras para aparecer a Ocarina */
 let ocarinaShouldAppear = false;
 if (visits === 4) ocarinaShouldAppear = true;
-else if (visits > 4 && Math.random() < 0.30) ocarinaShouldAppear = true;
+else if (visits > 4 && Math.random() < 0.10) ocarinaShouldAppear = true;
 
 /* Clique no botão Start */
 document.getElementById("startButton").onclick = () => {
